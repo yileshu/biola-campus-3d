@@ -77,28 +77,8 @@ namespace BiolaCampus.Core
 
         void SetupLighting()
         {
-            var sunGo = new GameObject("Sun");
-            var sun = sunGo.AddComponent<Light>();
-            sun.type = LightType.Directional;
-            sun.intensity = 1.15f;
-            sun.color = new Color(1f, 0.96f, 0.88f);
-            sun.shadows = LightShadows.Soft;
-            sunGo.transform.rotation = Quaternion.Euler(48f, -35f, 0f);
-            RenderSettings.sun = sun;
-
-            RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.62f, 0.70f, 0.82f);
-            RenderSettings.ambientEquatorColor = new Color(0.55f, 0.55f, 0.52f);
-            RenderSettings.ambientGroundColor = new Color(0.30f, 0.28f, 0.25f);
+            new GameObject("Sun & Sky").AddComponent<SunController>().Initialize();
             RenderSettings.fog = false;
-
-            var sky = Resources.Load<Material>("BiolaMaterials/Sky");
-            if (sky == null)
-            {
-                var sh = Shader.Find("Skybox/Procedural");
-                if (sh != null) sky = new Material(sh);
-            }
-            if (sky != null) RenderSettings.skybox = sky;
         }
 
         void SetupCamera()

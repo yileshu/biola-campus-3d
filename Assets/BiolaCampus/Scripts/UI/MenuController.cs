@@ -123,7 +123,7 @@ namespace BiolaCampus.UI
             UIFactory.Cycler("Labels", page, "Floating labels", new[] { "On", "Off" }, GameSettings.ShowFloatingLabels ? 0 : 1,
                 i => GameSettings.ShowFloatingLabels = i == 0).transform.parent.GetComponent<RectTransform>().Height(52);
             var note = UIFactory.Label("Note", page,
-                "Quality sets Unity's quality level and how finely Google 3D Tiles are refined (screen-space error 32 / 16 / 8). " +
+                "Quality sets Unity's quality level and how finely Google 3D Tiles are refined (screen-space error 12 / 6 / 4). " +
                 "Higher quality downloads more tiles.", 16, TextAnchor.UpperLeft, UIFactory.MutedColor);
             note.Height(70);
         }

@@ -65,12 +65,21 @@ namespace BiolaCampus.World
             Tileset.url = GoogleTilesRootUrl + "?key=" + SecretsLoader.GoogleMapsApiKey;
             Tileset.showCreditsOnScreen = true;            // Google + data-provider attributions
             Tileset.createPhysicsMeshes = true;            // MeshColliders so the player can walk on tiles
-            Tileset.maximumSimultaneousTileLoads = 20;
+            // Ground-level tuning: no holes while children load, keep ancestors/siblings resident so
+            // turning around does not pop, and keep (coarser) tiles outside the view frustum instead of
+            // unloading them.
+            Tileset.maximumSimultaneousTileLoads = 24;
+            Tileset.loadingDescendantLimit = 20;
             Tileset.preloadAncestors = true;
             Tileset.preloadSiblings = true;
-            Tileset.forbidHoles = false;
+            Tileset.forbidHoles = true;
             Tileset.enableFrustumCulling = true;
+            Tileset.enforceCulledScreenSpaceError = true;
+            Tileset.culledScreenSpaceError = 48f;
             Tileset.enableFogCulling = true;
+            // Use real-time lighting (sun + shadows) instead of the unlit photogrammetry look.
+            Tileset.ignoreKhrMaterialsUnlit = true;
+            Tileset.generateSmoothNormals = true;
             ApplyQuality(GameSettings.Quality);
             Tileset.OnTileGameObjectCreated += OnTileCreated;
             _startTime = Time.realtimeSinceStartup;

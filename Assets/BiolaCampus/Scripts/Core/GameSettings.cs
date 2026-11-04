@@ -50,10 +50,11 @@ namespace BiolaCampus.Core
         }
 
         /// <summary>Screen-space error (lower = sharper, more downloads) per quality level.</summary>
-        public static float ScreenSpaceError(TileQuality q) => q == TileQuality.Low ? 32f : q == TileQuality.Medium ? 16f : 8f;
+        public static float ScreenSpaceError(TileQuality q) => q == TileQuality.Low ? 12f : q == TileQuality.Medium ? 6f : 4f;
 
+        /// <summary>In-memory tile cache (never written to disk).</summary>
         public static long TileCacheBytes(TileQuality q) =>
-            q == TileQuality.Low ? 256L * 1024 * 1024 : q == TileQuality.Medium ? 512L * 1024 * 1024 : 1024L * 1024 * 1024;
+            q == TileQuality.Low ? 384L * 1024 * 1024 : q == TileQuality.Medium ? 768L * 1024 * 1024 : 1536L * 1024 * 1024;
 
         /// <summary>Applies the matching Unity quality level (by name when available).</summary>
         public static void ApplyUnityQuality(TileQuality q)
@@ -64,7 +65,11 @@ namespace BiolaCampus.Core
             int idx = Array.IndexOf(names, wanted);
             if (idx < 0) idx = Mathf.Clamp(Mathf.RoundToInt((names.Length - 1) * ((int)q / 2f)), 0, names.Length - 1);
             QualitySettings.SetQualityLevel(idx, true);
-            QualitySettings.shadows = q == TileQuality.High ? ShadowQuality.HardOnly : ShadowQuality.Disable;
+            // Built-in pipeline shadow settings (URP reads its own pipeline asset; see RenderingSetup).
+            QualitySettings.shadows = q == TileQuality.Low ? ShadowQuality.Disable : ShadowQuality.All;
+            QualitySettings.shadowDistance = q == TileQuality.Low ? 0f : q == TileQuality.Medium ? 160f : 320f;
+            QualitySettings.shadowCascades = q == TileQuality.High ? 4 : 2;
+            QualitySettings.shadowResolution = q == TileQuality.High ? ShadowResolution.VeryHigh : ShadowResolution.High;
             QualitySettings.vSyncCount = 0;
         }
     }
