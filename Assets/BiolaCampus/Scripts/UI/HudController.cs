@@ -102,8 +102,8 @@ namespace BiolaCampus.UI
 
             _mode.text = _player.Flying ? "<b>DRONE</b>  ·  bird's-eye view" : "<b>WALK</b>";
             _hints.text = _player.Flying
-                ? "WASD move · Space/E up · Ctrl/Q down · Shift fast · Scroll speed · F walk · M map · Esc menu"
-                : "WASD move · Shift sprint · Space jump · F drone · M map · Esc menu";
+                ? "WASD move · Space/E up · Ctrl/Q down · Shift fast · Scroll speed · F walk · N day/night · M map · Esc menu"
+                : "WASD move · Shift sprint · Space jump · F drone · N day/night · M map · Esc menu";
             if (_player.NearBoundary) Toast("Edge of campus", 0.6f);
 
             _lookTimer -= Time.unscaledDeltaTime;

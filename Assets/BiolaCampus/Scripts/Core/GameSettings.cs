@@ -13,6 +13,9 @@ namespace BiolaCampus.Core
 
         public static event Action Changed;
 
+        /// <summary>Web defaults to Medium (30+ fps on a laptop); desktop builds default to High.</summary>
+        public static TileQuality DefaultQuality => Application.platform == RuntimePlatform.WebGLPlayer ? TileQuality.Medium : TileQuality.High;
+
         public static float MouseSensitivity
         {
             get => PlayerPrefs.GetFloat(KSens, 1.0f);
@@ -27,7 +30,7 @@ namespace BiolaCampus.Core
 
         public static TileQuality Quality
         {
-            get => (TileQuality)Mathf.Clamp(PlayerPrefs.GetInt(KQuality, (int)TileQuality.Medium), 0, 2);
+            get => (TileQuality)Mathf.Clamp(PlayerPrefs.GetInt(KQuality, (int)DefaultQuality), 0, 2);
             set { PlayerPrefs.SetInt(KQuality, (int)value); Save(); }
         }
 
@@ -71,6 +74,8 @@ namespace BiolaCampus.Core
             QualitySettings.shadowCascades = q == TileQuality.High ? 4 : 2;
             QualitySettings.shadowResolution = q == TileQuality.High ? ShadowResolution.VeryHigh : ShadowResolution.High;
             QualitySettings.vSyncCount = 0;
+            // URP: the pipeline asset (shadows, SSAO, AA) must be re-applied after a quality-level switch.
+            World.RenderingSetup.Instance?.Apply();
         }
     }
 }

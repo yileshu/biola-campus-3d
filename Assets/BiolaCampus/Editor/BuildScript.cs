@@ -38,6 +38,7 @@ namespace BiolaCampus.EditorTools
                 if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.WebGL)
                     EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL);
 
+                BiolaProjectSetup.EnsureUrp();
                 BiolaProjectSetup.EnsureMaterials();
                 BiolaProjectSetup.EnsureMainScene(openScene: false);
                 BiolaProjectSetup.ApplyWebPlayerSettings(webGpu);

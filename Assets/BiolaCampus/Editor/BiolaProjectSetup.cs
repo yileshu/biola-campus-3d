@@ -7,6 +7,7 @@ using UnityEditor.Build;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 
 namespace BiolaCampus.EditorTools
@@ -31,7 +32,7 @@ namespace BiolaCampus.EditorTools
             if (Application.isBatchMode) return; // CI calls RunAll() explicitly from BuildScript
             EditorApplication.delayCall += () =>
             {
-                if (!File.Exists(ScenePath) || !File.Exists(MaterialsDir + "/StdLitTemplate.mat"))
+                if (!File.Exists(ScenePath) || !File.Exists(MaterialsDir + "/UrpLitTemplate.mat") || !File.Exists(UrpDir + "/URP_Medium.asset"))
                 {
                     Debug.Log("[Biola] First open detected — running Biola ▸ Setup Project.");
                     RunAll(openScene: true);
@@ -44,6 +45,7 @@ namespace BiolaCampus.EditorTools
 
         public static void RunAll(bool openScene)
         {
+            EnsureUrp();
             EnsureMaterials();
             EnsureMainScene(openScene);
             ApplyWebPlayerSettings(webGpu: false);
@@ -93,8 +95,16 @@ namespace BiolaCampus.EditorTools
                 MakeMaterial("Area_" + k, "Standard", Color.gray);
             // Lit templates for runtime-generated campus materials (CampusMaterials). They enable the exact
             // keyword set used at runtime so those shader variants are compiled into the player.
-            MakeLitTemplate("StdLitTemplate", "Standard", false);
-            MakeLitTemplate("StdLitInstancedTemplate", "Standard", true);
+            if (UrpActive)
+            {
+                MakeLitTemplate("UrpLitTemplate", UrpLit, false);
+                MakeLitTemplate("UrpLitInstancedTemplate", UrpLit, true);
+            }
+            else
+            {
+                MakeLitTemplate("StdLitTemplate", "Standard", false);
+                MakeLitTemplate("StdLitInstancedTemplate", "Standard", true);
+            }
             var sky = MakeMaterial("Sky", "Skybox/Procedural", Color.white);
             if (sky != null)
             {
@@ -110,6 +120,7 @@ namespace BiolaCampus.EditorTools
             string path = $"{MaterialsDir}/{name}.mat";
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
             bool create = m == null;
+            if (!create && m.shader != null && m.shader.name != shaderName && Shader.Find(shaderName) != null) m.shader = Shader.Find(shaderName);
             if (create)
             {
                 var shader = Shader.Find(shaderName);
@@ -130,11 +141,20 @@ namespace BiolaCampus.EditorTools
             return m;
         }
 
+        const string UrpLit = "Universal Render Pipeline/Lit";
+        static bool UrpActive => GraphicsSettings.defaultRenderPipeline is UniversalRenderPipelineAsset;
+
         static Material MakeMaterial(string name, string shaderName, Color color)
         {
+            if (shaderName == "Standard" && UrpActive) shaderName = UrpLit;
             string path = $"{MaterialsDir}/{name}.mat";
             var existing = AssetDatabase.LoadAssetAtPath<Material>(path);
-            if (existing != null) return existing;
+            if (existing != null)
+            {
+                var want = Shader.Find(shaderName);
+                if (want != null && existing.shader != want) { existing.shader = want; existing.color = color; EditorUtility.SetDirty(existing); }
+                return existing;
+            }
             var shader = Shader.Find(shaderName);
             if (shader == null) { Debug.LogWarning("[Biola] Shader not found: " + shaderName); return null; }
             var m = new Material(shader) { name = name };
@@ -142,6 +162,93 @@ namespace BiolaCampus.EditorTools
             if (m.HasProperty("_Glossiness")) m.SetFloat("_Glossiness", 0.1f);
             AssetDatabase.CreateAsset(m, path);
             return m;
+        }
+
+        // ------------------------------------------------------------------------- URP
+
+        public const string UrpDir = "Assets/Resources/BiolaURP";
+
+        /// <summary>
+        /// Creates Low / Medium / High URP assets sharing one Universal Renderer (with an SSAO feature)
+        /// and makes Medium the default pipeline. RenderingSetup switches between them at runtime.
+        /// </summary>
+        public static void EnsureUrp()
+        {
+            Directory.CreateDirectory(UrpDir);
+            string rdPath = UrpDir + "/BiolaRenderer.asset";
+            var rd = AssetDatabase.LoadAssetAtPath<UniversalRendererData>(rdPath);
+            if (rd == null)
+            {
+                rd = ScriptableObject.CreateInstance<UniversalRendererData>();
+                rd.postProcessData = AssetDatabase.LoadAssetAtPath<PostProcessData>(
+                    "Packages/com.unity.render-pipelines.universal/Runtime/Data/PostProcessData.asset");
+                AssetDatabase.CreateAsset(rd, rdPath);
+            }
+            if (rd.postProcessData == null)
+                rd.postProcessData = AssetDatabase.LoadAssetAtPath<PostProcessData>(
+                    "Packages/com.unity.render-pipelines.universal/Runtime/Data/PostProcessData.asset");
+
+            if (!rd.rendererFeatures.Exists(f => f is ScreenSpaceAmbientOcclusion))
+            {
+                var ssao = ScriptableObject.CreateInstance<ScreenSpaceAmbientOcclusion>();
+                ssao.name = "SSAO";
+                AssetDatabase.AddObjectToAsset(ssao, rd);
+                rd.rendererFeatures.Add(ssao);
+            }
+            // Keep URP's feature map (local file ids) in sync so the features survive reimport.
+            var so = new SerializedObject(rd);
+            var map = so.FindProperty("m_RendererFeatureMap");
+            if (map != null)
+            {
+                map.arraySize = rd.rendererFeatures.Count;
+                for (int i = 0; i < rd.rendererFeatures.Count; i++)
+                    if (AssetDatabase.TryGetGUIDAndLocalFileIdentifier(rd.rendererFeatures[i], out string _, out long id))
+                        map.GetArrayElementAtIndex(i).longValue = id;
+                so.ApplyModifiedPropertiesWithoutUndo();
+            }
+            EditorUtility.SetDirty(rd);
+
+            UniversalRenderPipelineAsset medium = null;
+            foreach (var (name, shadows, cascades, dist, res, soft, lights, scale) in new[]
+                     {
+                         ("Low", false, 1, 0f, 1024, false, 2, 0.85f),
+                         ("Medium", true, 2, 160f, 2048, true, 4, 1f),
+                         ("High", true, 4, 320f, 4096, true, 8, 1f),
+                     })
+            {
+                string path = $"{UrpDir}/URP_{name}.asset";
+                var a = AssetDatabase.LoadAssetAtPath<UniversalRenderPipelineAsset>(path);
+                if (a == null)
+                {
+                    a = UniversalRenderPipelineAsset.Create(rd);
+                    AssetDatabase.CreateAsset(a, path);
+                }
+                a.supportsHDR = true;
+                a.msaaSampleCount = 1;
+                a.renderScale = scale;
+                a.shadowDistance = dist;
+                a.shadowCascadeCount = cascades;
+                a.mainLightShadowmapResolution = res;
+                a.maxAdditionalLightsCount = lights;
+                a.supportsCameraDepthTexture = true;
+                var aso = new SerializedObject(a);
+                void Set(string prop, System.Action<SerializedProperty> apply) { var pr = aso.FindProperty(prop); if (pr != null) apply(pr); else Debug.LogWarning("[Biola] URP asset has no " + prop); }
+                Set("m_MainLightShadowsSupported", p => p.boolValue = shadows);
+                Set("m_SoftShadowsSupported", p => p.boolValue = soft);
+                Set("m_AdditionalLightsRenderingMode", p => p.intValue = 1);   // per pixel (street lamps)
+                Set("m_AdditionalLightShadowsSupported", p => p.boolValue = false);
+                aso.ApplyModifiedPropertiesWithoutUndo();
+                EditorUtility.SetDirty(a);
+                if (name == "Medium") medium = a;
+            }
+
+            if (medium != null && GraphicsSettings.defaultRenderPipeline != medium)
+            {
+                GraphicsSettings.defaultRenderPipeline = medium;
+                Debug.Log("[Biola] URP enabled (default asset: URP_Medium).");
+            }
+            // Clear per-quality-level overrides so every level uses the default unless RenderingSetup overrides.
+            AssetDatabase.SaveAssets();
         }
 
         // ---------------------------------------------------------------- player settings

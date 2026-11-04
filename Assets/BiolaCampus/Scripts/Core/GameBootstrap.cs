@@ -41,6 +41,8 @@ namespace BiolaCampus.Core
 
             SetupLighting();
             SetupCamera();
+            if (UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline is UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset)
+                new GameObject("Rendering (URP)").AddComponent<RenderingSetup>().Initialize(_camera);
 
             // Our own campus core (USGS lidar terrain + OSM/lidar buildings). The georeference origin is
             // moved onto the lidar ground at the campus centre so Unity Y = 0 is ground level there.
@@ -90,7 +92,6 @@ namespace BiolaCampus.Core
         void SetupLighting()
         {
             new GameObject("Sun & Sky").AddComponent<SunController>().Initialize();
-            RenderSettings.fog = false;
         }
 
         void SetupCamera()

@@ -31,7 +31,9 @@ namespace BiolaCampus.UI
             "Space or E — climb,  Ctrl, Q or C — descend\n" +
             "Shift — fast,  mouse wheel — change cruise speed\n\n" +
             "<b>Other</b>\n" +
+            "N — toggle day / night (street lamps and windows light up)\n" +
             "M or Tab — enlarge / shrink the campus map\n" +
+            "F3 — renderer diagnostics (tiles, FPS)\n" +
             "Esc — release the mouse and open this menu\n\n" +
             "Look at or walk up to a building to see its name.\n" +
             "The yellow line on the map is the campus boundary.";
@@ -123,8 +125,8 @@ namespace BiolaCampus.UI
             UIFactory.Cycler("Labels", page, "Floating labels", new[] { "On", "Off" }, GameSettings.ShowFloatingLabels ? 0 : 1,
                 i => GameSettings.ShowFloatingLabels = i == 0).transform.parent.GetComponent<RectTransform>().Height(52);
             var note = UIFactory.Label("Note", page,
-                "Quality sets Unity's quality level and how finely Google 3D Tiles are refined (screen-space error 12 / 6 / 4). " +
-                "Higher quality downloads more tiles.", 16, TextAnchor.UpperLeft, UIFactory.MutedColor);
+                "Low: no shadows/bloom, fastest. Medium (web default): soft shadows, bloom, ACES. High: SSAO, sharper shadows, SMAA. " +
+                "Also sets Google 3D Tiles detail (screen-space error 12 / 6 / 4).", 16, TextAnchor.UpperLeft, UIFactory.MutedColor);
             note.Height(70);
         }
 
