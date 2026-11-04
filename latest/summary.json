@@ -1,0 +1,74 @@
+{
+  "label": "run 4 @ 7b78540de6cc563e23a88dd0a0ad20b7cf1cca5b",
+  "url": "https://yileshu.github.io/biola-campus-3d/?shot=all",
+  "done": true,
+  "shots": [
+    {
+      "name": "entrance",
+      "file": "/home/runner/work/biola-campus-3d/biola-campus-3d/shots/entrance.png",
+      "info": "BIOLA_SHOT_READY entrance progress=100.0 tiles=668 ground=75.3 wait=50s fps=1\n"
+    },
+    {
+      "name": "quad",
+      "file": "/home/runner/work/biola-campus-3d/biola-campus-3d/shots/quad.png",
+      "info": "BIOLA_SHOT_READY quad progress=100.0 tiles=1237 ground=-8.8 wait=166s fps=1\n"
+    },
+    {
+      "name": "between",
+      "file": "/home/runner/work/biola-campus-3d/biola-campus-3d/shots/between.png",
+      "info": "BIOLA_SHOT_READY between progress=100.0 tiles=1333 ground=-14.7 wait=57s fps=1\n"
+    },
+    {
+      "name": "drone",
+      "file": "/home/runner/work/biola-campus-3d/biola-campus-3d/shots/drone.png",
+      "info": "BIOLA_SHOT_READY drone progress=100.0 tiles=1410 ground=none wait=40s fps=1\n"
+    }
+  ],
+  "diagnostics": [
+    "[2026-11-04T19:36:30.275Z] console.log: [BiolaDiag] Requesting Google Photorealistic 3D Tiles root.json (key present, page https://yileshu.github.io/biola-campus-3d/)\n",
+    "[2026-11-04T19:36:30.348Z] console.log: [BiolaDiag] Screenshot tour: 4 spot(s): entrance, quad, between, drone\n",
+    "[2026-11-04T19:36:30.349Z] console.log: [BiolaDiag] Tour spot 'entrance'\n",
+    "[2026-11-04T19:36:32.629Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: requesting root.json… · 0 fps\n",
+    "[2026-11-04T19:36:33.442Z] console.log: [BiolaDiag] Google 3D Tiles OK: first tile after 3.2s\n",
+    "[2026-11-04T19:36:42.526Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 268 tiles · 65% loaded · 10 fps\n",
+    "[2026-11-04T19:36:52.721Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 403 tiles · 66% loaded · 3 fps\n",
+    "[2026-11-04T19:37:03.604Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 556 tiles · 85% loaded · 1 fps\n",
+    "[2026-11-04T19:37:14.384Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 650 tiles · 97% loaded · 2 fps\n",
+    "[2026-11-04T19:37:20.523Z] console.log: BIOLA_SHOT_READY entrance progress=100.0 tiles=668 ground=75.3 wait=50s fps=1\n",
+    "[2026-11-04T19:37:24.516Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 668 tiles · 100% loaded · 1 fps\n",
+    "[2026-11-04T19:37:40.568Z] console.log: [BiolaDiag] Tour spot 'quad'\n",
+    "[2026-11-04T19:37:40.974Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 668 tiles · 32% loaded · 2 fps\n",
+    "[2026-11-04T19:37:51.323Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 718 tiles · 42% loaded · 1 fps\n",
+    "[2026-11-04T19:38:02.529Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 766 tiles · 48% loaded · 2 fps\n",
+    "[2026-11-04T19:38:13.325Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 817 tiles · 50% loaded · 2 fps\n",
+    "[2026-11-04T19:38:23.268Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 860 tiles · 55% loaded · 1 fps\n",
+    "[2026-11-04T19:38:34.083Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 902 tiles · 60% loaded · 1 fps\n",
+    "[2026-11-04T19:38:45.459Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 949 tiles · 68% loaded · 1 fps\n",
+    "[2026-11-04T19:38:54.817Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 990 tiles · 70% loaded · 1 fps\n",
+    "[2026-11-04T19:39:05.569Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1023 tiles · 74% loaded · 0 fps\n",
+    "[2026-11-04T19:39:16.932Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1063 tiles · 79% loaded · 1 fps\n",
+    "[2026-11-04T19:39:27.542Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1094 tiles · 83% loaded · 1 fps\n",
+    "[2026-11-04T19:39:37.389Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1118 tiles · 86% loaded · 1 fps\n",
+    "[2026-11-04T19:39:47.364Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1149 tiles · 90% loaded · 1 fps\n",
+    "[2026-11-04T19:39:59.440Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1174 tiles · 93% loaded · 1 fps\n",
+    "[2026-11-04T19:40:08.442Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1201 tiles · 96% loaded · 1 fps\n",
+    "[2026-11-04T19:40:18.574Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1227 tiles · 99% loaded · 1 fps\n",
+    "[2026-11-04T19:40:26.357Z] console.log: BIOLA_SHOT_READY quad progress=100.0 tiles=1237 ground=-8.8 wait=166s fps=1\n",
+    "[2026-11-04T19:40:28.731Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1237 tiles · 100% loaded · 1 fps\n",
+    "[2026-11-04T19:40:47.357Z] console.log: [BiolaDiag] Tour spot 'between'\n",
+    "[2026-11-04T19:40:47.944Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1237 tiles · 88% loaded · 2 fps\n",
+    "[2026-11-04T19:41:03.449Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1247 tiles · 89% loaded · 1 fps\n",
+    "[2026-11-04T19:41:11.887Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1257 tiles · 90% loaded · 0 fps\n",
+    "[2026-11-04T19:41:23.613Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1281 tiles · 94% loaded · 1 fps\n",
+    "[2026-11-04T19:41:34.606Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1316 tiles · 98% loaded · 1 fps\n",
+    "[2026-11-04T19:41:43.357Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1333 tiles · 100% loaded · 2 fps\n",
+    "[2026-11-04T19:41:44.356Z] console.log: BIOLA_SHOT_READY between progress=100.0 tiles=1333 ground=-14.7 wait=57s fps=1\n",
+    "[2026-11-04T19:42:05.355Z] console.log: [BiolaDiag] Tour spot 'drone'\n",
+    "[2026-11-04T19:42:05.609Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1333 tiles · 70% loaded · 1 fps\n",
+    "[2026-11-04T19:42:22.184Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1346 tiles · 74% loaded · 0 fps\n",
+    "[2026-11-04T19:42:33.682Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1376 tiles · 85% loaded · 1 fps\n",
+    "[2026-11-04T19:42:43.358Z] console.log: [BiolaDiag] Google Photorealistic 3D Tiles: streaming · 1410 tiles · 100% loaded · 1 fps\n",
+    "[2026-11-04T19:42:45.289Z] console.log: BIOLA_SHOT_READY drone progress=100.0 tiles=1410 ground=none wait=40s fps=1\n",
+    "[2026-11-04T19:43:06.188Z] console.log: BIOLA_SHOT_DONE\n"
+  ]
+}
