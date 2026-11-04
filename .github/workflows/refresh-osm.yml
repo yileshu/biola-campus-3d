@@ -1,0 +1,30 @@
+name: Refresh OSM cache
+
+# Downloads Biola's campus data from the Overpass API and commits the cache
+# (Assets/Resources/OSM/biola_campus.json + Data/osm/biola_overpass_raw.json).
+# Map data © OpenStreetMap contributors (ODbL).
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 9 1 * *"   # monthly
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch from Overpass
+        run: python3 Tools/osm/fetch_osm.py
+      - name: Secret scan
+        run: bash Tools/git/check-secrets.sh
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Assets/Resources/OSM/biola_campus.json Data/osm/biola_overpass_raw.json
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git commit -m "Refresh OSM cache (© OpenStreetMap contributors)"
+          git push

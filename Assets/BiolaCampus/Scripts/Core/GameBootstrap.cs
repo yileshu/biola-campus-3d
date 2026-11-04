@@ -1,13 +1,14 @@
 using BiolaCampus.Osm;
 using BiolaCampus.Player;
+using BiolaCampus.UI;
 using BiolaCampus.World;
 using UnityEngine;
 
 namespace BiolaCampus.Core
 {
     /// <summary>
-    /// Milestone 2: georeference at the OSM campus centre, Google Photorealistic 3D Tiles with physics
-    /// meshes, and a first-person walker that spawns on the streamed ground. (Menus/HUD come later.)
+    /// Milestone 3: adds the OSM layer on top of milestone 2 — building labels (look-at / nearby),
+    /// minimap and the invisible campus boundary wall. (Title screen and settings come in milestone 4.)
     /// </summary>
     [DefaultExecutionOrder(-100)]
     public class GameBootstrap : MonoBehaviour
@@ -20,6 +21,8 @@ namespace BiolaCampus.Core
         float _timer, _groundFoundAt = -1f;
         Vector2 _spawnXZ;
         string _status = "";
+        HudController _hud;
+        MinimapController _minimap;
 
         void Awake()
         {
@@ -43,6 +46,19 @@ namespace BiolaCampus.Core
             go.AddComponent<CharacterController>();
             _player = go.AddComponent<FirstPersonController>();
             go.SetActive(false);
+
+            if (_map.HasBoundary) new GameObject("Campus Boundary Wall (OSM)").AddComponent<BoundaryWall>().Build(_map);
+
+            UIFactory.EnsureEventSystem();
+            var hudCanvas = UIFactory.Canvas("HUD Canvas", 0);
+            _hud = hudCanvas.gameObject.AddComponent<HudController>();
+            _hud.Build(hudCanvas, _map);
+            var mapCanvas = UIFactory.Canvas("Minimap Canvas", 5);
+            _minimap = mapCanvas.gameObject.AddComponent<MinimapController>();
+            _minimap.Build(mapCanvas, _map);
+            _minimap.SetVisible(false);
+            var attrCanvas = UIFactory.Canvas("Attribution Canvas", 50);
+            attrCanvas.gameObject.AddComponent<AttributionBar>().Build(attrCanvas, !_world.IsOffline);
 
             _spawnXZ = _map.FindSpawnPoint();
             _camera.transform.position = new Vector3(_spawnXZ.x, 60f, _spawnXZ.y);
@@ -72,6 +88,10 @@ namespace BiolaCampus.Core
                     _player.Teleport(hit.point + Vector3.up * 0.15f, 0f);
                     _spawned = true;
                     _status = "";
+                    _hud.SetPlayer(_player);
+                    _hud.SetVisible(true);
+                    _minimap.SetPlayer(_player.transform);
+                    _minimap.SetVisible(true);
                     return;
                 }
             }
@@ -84,7 +104,6 @@ namespace BiolaCampus.Core
         {
             if (!string.IsNullOrEmpty(_status)) GUI.Label(new Rect(20, 20, 800, 30), _status);
             if (_world != null && _world.IsOffline) GUI.Label(new Rect(20, 44, 1000, 30), _world.StatusMessage);
-            GUI.Label(new Rect(Screen.width - 330, Screen.height - 48, 320, 24), "3D Tiles: Google  ·  Map data © OpenStreetMap contributors");
         }
     }
 }
