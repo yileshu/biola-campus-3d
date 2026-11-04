@@ -33,6 +33,9 @@ namespace BiolaCampus.World
             Georeference = geoGo.AddComponent<CesiumGeoreference>();
             Georeference.SetOriginLongitudeLatitudeHeight(map.Frame.OriginLon, map.Frame.OriginLat, map.Frame.OriginHeight);
 
+            GameSettings.Changed += OnSettingsChanged;
+            ApplyQuality(GameSettings.Quality);
+
             if (!SecretsLoader.HasGoogleKey)
             {
                 GoOffline("No Google Map Tiles API key found (Assets/Config/secrets.json). Showing the offline OSM campus.");
@@ -57,8 +60,6 @@ namespace BiolaCampus.World
             Tileset.enableFogCulling = true;
             ApplyQuality(GameSettings.Quality);
             tsGo.SetActive(true);
-
-            GameSettings.Changed += OnSettingsChanged;
             StatusMessage = "Streaming Google Photorealistic 3D Tiles…";
         }
 
@@ -68,10 +69,16 @@ namespace BiolaCampus.World
             GameSettings.Changed -= OnSettingsChanged;
         }
 
-        void OnSettingsChanged() => ApplyQuality(GameSettings.Quality);
+        TileQuality? _appliedQuality;
+
+        void OnSettingsChanged()
+        {
+            if (_appliedQuality != GameSettings.Quality) ApplyQuality(GameSettings.Quality);
+        }
 
         public void ApplyQuality(TileQuality q)
         {
+            _appliedQuality = q;
             GameSettings.ApplyUnityQuality(q);
             if (Tileset == null) return;
             Tileset.maximumScreenSpaceError = GameSettings.ScreenSpaceError(q);
