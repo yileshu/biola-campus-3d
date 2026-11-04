@@ -30,6 +30,62 @@ namespace BiolaCampus.EditorTools
             Build(output, webGpu, dev, exitOnFinish: Application.isBatchMode);
         }
 
+        [MenuItem("Biola/Build Windows Player (High)", priority = 42)]
+        public static void BuildWindowsMenu() => BuildStandalone("Builds/Windows/BiolaCampus3D.exe", false);
+
+        /// <summary>CI entry point for the Windows desktop build (GameCI targetPlatform StandaloneWindows64).</summary>
+        public static void BuildWindows()
+        {
+            string output = Arg("-customBuildPath") ?? "build/StandaloneWindows64/BiolaCampus3D.exe";
+            if (!output.EndsWith(".exe", StringComparison.OrdinalIgnoreCase)) output = Path.Combine(output, "BiolaCampus3D.exe");
+            BuildStandalone(output, Application.isBatchMode);
+        }
+
+        static void BuildStandalone(string output, bool exitOnFinish)
+        {
+            int exitCode = 1;
+            try
+            {
+                if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneWindows64)
+                    EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64);
+                BiolaProjectSetup.EnsureUrp();
+                BiolaProjectSetup.EnsureMaterials();
+                BiolaProjectSetup.EnsureMainScene(openScene: false);
+                BiolaProjectSetup.ApplyCommonPlayerSettings();
+                // Mono: IL2CPP for Windows cannot be cross-compiled on the Linux CI image.
+                PlayerSettings.SetScriptingBackend(UnityEditor.Build.NamedBuildTarget.Standalone, ScriptingImplementation.Mono2x);
+                PlayerSettings.fullScreenMode = FullScreenMode.FullScreenWindow;
+                PlayerSettings.defaultScreenWidth = 1920;
+                PlayerSettings.defaultScreenHeight = 1080;
+                PlayerSettings.resizableWindow = true;
+                AssetDatabase.SaveAssets();
+                SecretsBuildProcessor.Stage();
+
+                Directory.CreateDirectory(Path.GetDirectoryName(output));
+                var options = new BuildPlayerOptions
+                {
+                    scenes = new[] { BiolaProjectSetup.ScenePath },
+                    locationPathName = output,
+                    target = BuildTarget.StandaloneWindows64,
+                    targetGroup = BuildTargetGroup.Standalone,
+                    options = BuildOptions.None,
+                };
+                Debug.Log($"[Biola] Building Windows player → {output} (default preset High)");
+                var summary = BuildPipeline.BuildPlayer(options).summary;
+                Debug.Log($"[Biola] Build {summary.result}: {summary.totalSize / (1024f * 1024f):0.0} MB, {summary.totalErrors} errors, {summary.totalTime}");
+                exitCode = summary.result == BuildResult.Succeeded ? 0 : 1;
+            }
+            catch (Exception e)
+            {
+                Debug.LogError("[Biola] Build failed: " + e);
+            }
+            finally
+            {
+                SecretsBuildProcessor.Cleanup();
+            }
+            if (exitOnFinish) EditorApplication.Exit(exitCode);
+        }
+
         static void Build(string output, bool webGpu, bool development, bool exitOnFinish)
         {
             int exitCode = 1;

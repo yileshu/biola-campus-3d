@@ -258,12 +258,17 @@ namespace BiolaCampus.EditorTools
         /// (tiles are decoded into WASM memory), Brotli with decompression fallback for small downloads
         /// on any static host, WebGL 2 by default and optional WebGPU.
         /// </summary>
-        public static void ApplyWebPlayerSettings(bool webGpu)
+        public static void ApplyCommonPlayerSettings()
         {
             PlayerSettings.companyName = "Biola Campus 3D (unofficial)";
             PlayerSettings.productName = "Biola Campus 3D";
             PlayerSettings.colorSpace = ColorSpace.Linear;
             PlayerSettings.runInBackground = true;
+        }
+
+        public static void ApplyWebPlayerSettings(bool webGpu)
+        {
+            ApplyCommonPlayerSettings();
 
             PlayerSettings.WebGL.threadsSupport = true;                 // "Native C/C++ Multithreading"
             PlayerSettings.WebGL.initialMemorySize = 512;               // MB

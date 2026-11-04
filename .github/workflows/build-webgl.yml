@@ -98,6 +98,53 @@ jobs:
         with:
           path: build/WebGL/BiolaCampus3D
 
+  build-windows:
+    name: Build Windows (desktop, High preset)
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+      - name: Secret scan (abort if a Google API key is committed)
+        run: bash Tools/git/check-secrets.sh
+      - name: Write Assets/Config/secrets.json from the GOOGLE_MAPS_API_KEY secret
+        env:
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: |
+          if [ -z "${GOOGLE_MAPS_API_KEY}" ]; then echo "::warning::GOOGLE_MAPS_API_KEY not set"; exit 0; fi
+          python3 -c "import json,os; json.dump({'googleMapsApiKey': os.environ['GOOGLE_MAPS_API_KEY']}, open('Assets/Config/secrets.json','w'))"
+      - name: Free disk space for the Unity image
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-Win64-${{ hashFiles('Packages/manifest.json', 'ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: Library-Win64-
+      - name: Build with GameCI
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: StandaloneWindows64
+          buildName: BiolaCampus3D
+          buildMethod: BiolaCampus.EditorTools.BuildScript.BuildWindows
+          allowDirtyBuild: true
+          versioning: None
+      - name: Remove secrets from the workspace
+        if: always()
+        run: rm -f Assets/Config/secrets.json && sudo rm -rf Assets/Resources/Generated || true
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: BiolaCampus3D-Windows
+          path: build/StandaloneWindows64
+          if-no-files-found: error
+
   deploy:
     name: Deploy to GitHub Pages
     needs: build
