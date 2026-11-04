@@ -96,16 +96,16 @@ namespace BiolaCampus.World.Campus
             int st = o.Style;
             var style = ProceduralTextures.Styles[st];
             var nightWin = style.Name == "Garage" ? Color.black : new Color(1f, 0.80f, 0.55f) * 1.6f;
-            mats[(int)Sub.Facade] = CampusMaterials.Lit("Facade " + style.Name, ProceduralTextures.Facade(st), Color.white, Vector2.one, 1f, nightWin);
+            mats[(int)Sub.Facade] = CampusMaterials.Lit("Facade " + style.Name, ProceduralTextures.Facade(st), Color.white, Vector2.one, 0.32f, nightWin);
             mats[(int)Sub.Plain] = CampusMaterials.Lit("Wall " + style.Name, ProceduralTextures.PlainWall(st), Color.white, Vector2.one);
             mats[(int)Sub.Plinth] = CampusMaterials.Lit("Plinth", ProceduralTextures.Ground(ProceduralTextures.Surface.Concrete), new Color(0.85f, 0.84f, 0.80f), Vector2.one);
             mats[(int)Sub.Trim] = CampusMaterials.Lit("Trim " + style.Name, ProceduralTextures.Solid("trim" + style.Name, style.Trim, 0.25f, 0, 0.05f), Color.white, Vector2.one);
             mats[(int)Sub.Roof] = pitched && roofDone
                 ? CampusMaterials.Lit("Clay Roof", ProceduralTextures.RoofTile(), Color.white, Vector2.one)
                 : CampusMaterials.Lit("Flat Roof", ProceduralTextures.FlatRoof(), Color.white, Vector2.one);
-            mats[(int)Sub.Doors] = CampusMaterials.Lit("Doors", ProceduralTextures.Doors(), Color.white, Vector2.one, 1f, new Color(1f, 0.85f, 0.6f) * 1.4f);
-            mats[(int)Sub.Metal] = CampusMaterials.Lit("Rooftop Metal", ProceduralTextures.Solid("hvac", new Color(0.62f, 0.64f, 0.66f), 0.45f, 0.6f, 0.08f), Color.white, Vector2.one);
-            mats[(int)Sub.Beacon] = CampusMaterials.Lit("Library Beacon", ProceduralTextures.Solid("beacon", new Color(0.85f, 0.92f, 1f), 0.9f, 0f, 0.02f, Color.white), Color.white, Vector2.one, 1f, new Color(0.8f, 0.9f, 1f) * 6f);
+            mats[(int)Sub.Doors] = CampusMaterials.Lit("Doors", ProceduralTextures.Doors(), Color.white, Vector2.one, 0.6f, new Color(1f, 0.85f, 0.6f) * 1.4f);
+            mats[(int)Sub.Metal] = CampusMaterials.Lit("Rooftop Metal", ProceduralTextures.Solid("hvac", new Color(0.62f, 0.64f, 0.66f), 0.45f, 0.6f, 0.08f), Color.white, Vector2.one, 0.45f, metallic: 0.6f);
+            mats[(int)Sub.Beacon] = CampusMaterials.Lit("Library Beacon", ProceduralTextures.Solid("beacon", new Color(0.85f, 0.92f, 1f), 0.9f, 0f, 0.02f, Color.white), Color.white, Vector2.one, 0.8f, new Color(0.8f, 0.9f, 1f) * 6f);
 
             var go = new GameObject(b.Name ?? b.Id ?? "Building");
             go.transform.SetParent(parent, false);

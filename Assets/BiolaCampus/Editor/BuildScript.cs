@@ -49,6 +49,7 @@ namespace BiolaCampus.EditorTools
                 if (EditorUserBuildSettings.activeBuildTarget != BuildTarget.StandaloneWindows64)
                     EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.Standalone, BuildTarget.StandaloneWindows64);
                 BiolaProjectSetup.EnsureUrp();
+                BiolaProjectSetup.ReimportCesiumShaders();
                 BiolaProjectSetup.EnsureMaterials();
                 BiolaProjectSetup.EnsureMainScene(openScene: false);
                 BiolaProjectSetup.ApplyCommonPlayerSettings();
@@ -95,6 +96,7 @@ namespace BiolaCampus.EditorTools
                     EditorUserBuildSettings.SwitchActiveBuildTarget(BuildTargetGroup.WebGL, BuildTarget.WebGL);
 
                 BiolaProjectSetup.EnsureUrp();
+                BiolaProjectSetup.ReimportCesiumShaders();
                 BiolaProjectSetup.EnsureMaterials();
                 BiolaProjectSetup.EnsureMainScene(openScene: false);
                 BiolaProjectSetup.ApplyWebPlayerSettings(webGpu);

@@ -127,13 +127,15 @@ namespace BiolaCampus.EditorTools
                 if (shader == null) { Debug.LogWarning("[Biola] Shader not found: " + shaderName); return null; }
                 m = new Material(shader) { name = name };
             }
-            // Dummy textures make the keywords meaningful; runtime materials replace them.
-            m.SetTexture("_BumpMap", Texture2D.normalTexture);
-            m.SetTexture("_MetallicGlossMap", Texture2D.whiteTexture);
-            m.SetTexture("_EmissionMap", Texture2D.blackTexture);
+            // Real texture assets (built-in textures do not serialize, and URP's material validation would then
+            // drop the keywords and the build would strip those variants). Runtime materials replace them.
+            m.SetTexture("_BumpMap", TemplateTexture("TemplateNormal", new Color(0.5f, 0.5f, 1f, 1f), true));
+            m.SetTexture("_EmissionMap", TemplateTexture("TemplateBlack", Color.black, false));
+            m.SetTexture("_MetallicGlossMap", null);
+            m.SetColor("_EmissionColor", new Color(0.004f, 0.004f, 0.004f));
             m.EnableKeyword("_NORMALMAP");
-            m.EnableKeyword("_METALLICSPECGLOSSMAP");
-            m.EnableKeyword("_METALLICGLOSSMAP");
+            m.DisableKeyword("_METALLICSPECGLOSSMAP");
+            m.DisableKeyword("_METALLICGLOSSMAP");
             m.EnableKeyword("_EMISSION");
             m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
             m.enableInstancing = instanced;
@@ -143,6 +145,46 @@ namespace BiolaCampus.EditorTools
 
         const string UrpLit = "Universal Render Pipeline/Lit";
         static bool UrpActive => GraphicsSettings.defaultRenderPipeline is UniversalRenderPipelineAsset;
+
+        static Texture2D TemplateTexture(string name, Color c, bool normalMap)
+        {
+            string path = $"{MaterialsDir}/{name}.png";
+            if (!File.Exists(path))
+            {
+                var t = new Texture2D(4, 4, TextureFormat.RGBA32, false, true);
+                var px = new Color[16];
+                for (int i = 0; i < 16; i++) px[i] = c;
+                t.SetPixels(px); t.Apply();
+                File.WriteAllBytes(path, t.EncodeToPNG());
+                AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceSynchronousImport);
+            }
+            var imp = (TextureImporter)AssetImporter.GetAtPath(path);
+            if (imp != null && normalMap && imp.textureType != TextureImporterType.NormalMap)
+            {
+                imp.textureType = TextureImporterType.NormalMap;
+                imp.SaveAndReimport();
+            }
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+        }
+
+        /// <summary>
+        /// Re-imports Cesium's Shader Graphs so they are generated for the active pipeline (URP). A Library
+        /// imported before URP was installed only has the built-in target, which renders magenta.
+        /// </summary>
+        public static void ReimportCesiumShaders()
+        {
+            int n = 0;
+            foreach (var guid in AssetDatabase.FindAssets("", new[] { "Packages/com.cesium.unity" }))
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                if (path.EndsWith(".shadergraph") || path.EndsWith(".shadersubgraph"))
+                {
+                    AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate | ImportAssetOptions.ForceSynchronousImport);
+                    n++;
+                }
+            }
+            Debug.Log($"[Biola] Re-imported {n} Cesium shader graphs for the active render pipeline.");
+        }
 
         static Material MakeMaterial(string name, string shaderName, Color color)
         {

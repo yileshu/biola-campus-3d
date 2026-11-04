@@ -35,22 +35,25 @@ namespace BiolaCampus.World.Campus
         /// <paramref name="nightEmission"/> is the emission colour applied in night mode (black = none).
         /// </summary>
         public static Material Lit(string key, ProceduralTextures.Set set, Color tint, Vector2 tiling,
-            float smoothnessScale = 1f, Color? nightEmission = null, bool instanced = false, bool doubleSided = false)
+            float smoothness = 0.2f, Color? nightEmission = null, bool instanced = false, bool doubleSided = false, float metallic = 0f)
         {
             if (Cache.TryGetValue(key, out var cached) && cached != null) return cached;
             var m = new Material(Template(instanced)) { name = key };
             if (instanced) m.enableInstancing = true;
             bool urp = m.HasProperty("_BaseMap");
 
+            // Scalar metallic/smoothness (no metallic-gloss map): robust against variant stripping, and
+            // a mis-set map can never turn surfaces into mirrors.
             if (urp)
             {
                 m.SetTexture("_BaseMap", set.Albedo);
                 m.SetTextureScale("_BaseMap", tiling);
                 m.SetColor("_BaseColor", tint);
-                m.SetTexture("_MetallicGlossMap", set.Mask);
-                m.SetFloat("_Smoothness", Mathf.Clamp01(smoothnessScale));
-                m.SetFloat("_Metallic", 1f);
                 m.SetFloat("_WorkflowMode", 1f);
+                m.SetFloat("_Smoothness", Mathf.Clamp01(smoothness));
+                m.SetFloat("_Metallic", Mathf.Clamp01(metallic));
+                m.SetTexture("_MetallicGlossMap", null);
+                m.DisableKeyword("_METALLICSPECGLOSSMAP");
                 if (doubleSided && m.HasProperty("_Cull")) m.SetFloat("_Cull", 0f);
             }
             else
@@ -58,16 +61,16 @@ namespace BiolaCampus.World.Campus
                 m.SetTexture("_MainTex", set.Albedo);
                 m.SetTextureScale("_MainTex", tiling);
                 m.SetColor("_Color", tint);
-                m.SetTexture("_MetallicGlossMap", set.Mask);
-                m.SetFloat("_GlossMapScale", Mathf.Clamp01(smoothnessScale));
+                m.SetFloat("_Glossiness", Mathf.Clamp01(smoothness));
+                m.SetFloat("_Metallic", Mathf.Clamp01(metallic));
+                m.SetTexture("_MetallicGlossMap", null);
+                m.DisableKeyword("_METALLICGLOSSMAP");
             }
             m.SetTexture("_BumpMap", set.Normal);
             m.SetFloat("_BumpScale", 1f);
             m.SetTexture("_EmissionMap", set.Emission);
             m.SetColor("_EmissionColor", Color.black);
             m.EnableKeyword("_NORMALMAP");
-            m.EnableKeyword("_METALLICSPECGLOSSMAP");   // URP
-            m.EnableKeyword("_METALLICGLOSSMAP");       // Standard
             m.EnableKeyword("_EMISSION");
             m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
 

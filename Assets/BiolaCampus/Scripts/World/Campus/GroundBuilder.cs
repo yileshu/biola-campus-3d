@@ -46,7 +46,7 @@ namespace BiolaCampus.World.Campus
                 for (int i = 0; i < nx - 1; i++)
                     keep[j * (nx - 1) + i] = inside[j * nx + i] || inside[j * nx + i + 1] || inside[(j + 1) * nx + i] || inside[(j + 1) * nx + i + 1];
 
-            var grass = CampusMaterials.Lit("Terrain Grass", ProceduralTextures.Ground(Surface.Grass), Color.white, Vector2.one);
+            var grass = CampusMaterials.Lit("Terrain Grass", ProceduralTextures.Ground(Surface.Grass), Color.white, Vector2.one, 0.12f);
             int chunks = 0;
             for (int cj = 0; cj < nz - 1; cj += ChunkCells)
                 for (int ci = 0; ci < nx - 1; ci += ChunkCells)
@@ -137,7 +137,7 @@ namespace BiolaCampus.World.Campus
             foreach (var kv in bySurface)
             {
                 var mat = CampusMaterials.Lit("Area " + kv.Key, ProceduralTextures.Ground(kv.Key), Color.white, Vector2.one,
-                    kv.Key == Surface.Water ? 1f : 1f);
+                    kv.Key == Surface.Water ? 0.85f : 0.15f);
                 kv.Value.Emit(root, "Areas " + kv.Key, mat, false);
             }
         }

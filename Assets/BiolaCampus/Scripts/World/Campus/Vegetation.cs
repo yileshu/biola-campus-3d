@@ -37,16 +37,16 @@ namespace BiolaCampus.World.Campus
             colliders.SetParent(transform, false);
 
             // ---------------- meshes & materials
-            var bark = CampusMaterials.Lit("Bark", ProceduralTextures.Solid("bark", new Color(0.36f, 0.27f, 0.20f), 0.1f, 0, 0.25f), Color.white, Vector2.one, 1, null, true);
-            var palmBark = CampusMaterials.Lit("Palm Bark", ProceduralTextures.Solid("palmbark", new Color(0.52f, 0.44f, 0.34f), 0.1f, 0, 0.3f), Color.white, Vector2.one, 1, null, true);
-            var oakLeaf = CampusMaterials.Lit("Oak Leaves", ProceduralTextures.Solid("oakleaf", new Color(0.20f, 0.33f, 0.13f), 0.2f, 0, 0.3f), Color.white, Vector2.one, 1, null, true);
-            var oakLeaf2 = CampusMaterials.Lit("Oak Leaves 2", ProceduralTextures.Solid("oakleaf2", new Color(0.29f, 0.38f, 0.16f), 0.2f, 0, 0.3f), Color.white, Vector2.one, 1, null, true);
-            var palmLeaf = CampusMaterials.Lit("Palm Fronds", ProceduralTextures.Solid("palmleaf", new Color(0.33f, 0.45f, 0.18f), 0.25f, 0, 0.25f), Color.white, Vector2.one, 1, null, true, true);
-            var jacaranda = CampusMaterials.Lit("Jacaranda Blossom", ProceduralTextures.Solid("jacaranda", new Color(0.55f, 0.45f, 0.78f), 0.2f, 0, 0.25f), Color.white, Vector2.one, 1, null, true);
-            var metal = CampusMaterials.Lit("Dark Metal", ProceduralTextures.Solid("darkmetal", new Color(0.12f, 0.13f, 0.14f), 0.5f, 0.8f, 0.05f), Color.white, Vector2.one, 1, null, true);
-            var wood = CampusMaterials.Lit("Bench Wood", ProceduralTextures.Solid("benchwood", new Color(0.55f, 0.38f, 0.22f), 0.3f, 0, 0.2f), Color.white, Vector2.one, 1, null, true);
-            var lampGlass = CampusMaterials.Lit("Lamp Glass", ProceduralTextures.Solid("lampglass", new Color(0.95f, 0.92f, 0.85f), 0.8f, 0, 0.02f, Color.white), Color.white, Vector2.one, 1, new Color(1f, 0.82f, 0.55f) * 8f, true);
-            var steel = CampusMaterials.Lit("Steel", ProceduralTextures.Solid("steel", new Color(0.55f, 0.57f, 0.58f), 0.6f, 0.9f, 0.05f), Color.white, Vector2.one, 1, null, true);
+            var bark = CampusMaterials.Lit("Bark", ProceduralTextures.Solid("bark", new Color(0.36f, 0.27f, 0.20f), 0.1f, 0, 0.25f), Color.white, Vector2.one, 0.18f, null, true);
+            var palmBark = CampusMaterials.Lit("Palm Bark", ProceduralTextures.Solid("palmbark", new Color(0.52f, 0.44f, 0.34f), 0.1f, 0, 0.3f), Color.white, Vector2.one, 0.18f, null, true);
+            var oakLeaf = CampusMaterials.Lit("Oak Leaves", ProceduralTextures.Solid("oakleaf", new Color(0.20f, 0.33f, 0.13f), 0.2f, 0, 0.3f), Color.white, Vector2.one, 0.18f, null, true);
+            var oakLeaf2 = CampusMaterials.Lit("Oak Leaves 2", ProceduralTextures.Solid("oakleaf2", new Color(0.29f, 0.38f, 0.16f), 0.2f, 0, 0.3f), Color.white, Vector2.one, 0.18f, null, true);
+            var palmLeaf = CampusMaterials.Lit("Palm Fronds", ProceduralTextures.Solid("palmleaf", new Color(0.33f, 0.45f, 0.18f), 0.25f, 0, 0.25f), Color.white, Vector2.one, 0.18f, null, true, true);
+            var jacaranda = CampusMaterials.Lit("Jacaranda Blossom", ProceduralTextures.Solid("jacaranda", new Color(0.58f, 0.50f, 0.74f), 0.2f, 0, 0.25f), Color.white, Vector2.one, 0.18f, null, true);
+            var metal = CampusMaterials.Lit("Dark Metal", ProceduralTextures.Solid("darkmetal", new Color(0.12f, 0.13f, 0.14f), 0.5f, 0.8f, 0.05f), Color.white, Vector2.one, 0.45f, null, true, metallic: 0.7f);
+            var wood = CampusMaterials.Lit("Bench Wood", ProceduralTextures.Solid("benchwood", new Color(0.55f, 0.38f, 0.22f), 0.3f, 0, 0.2f), Color.white, Vector2.one, 0.18f, null, true);
+            var lampGlass = CampusMaterials.Lit("Lamp Glass", ProceduralTextures.Solid("lampglass", new Color(0.95f, 0.92f, 0.85f), 0.8f, 0, 0.02f, Color.white), Color.white, Vector2.one, 0.7f, new Color(1f, 0.82f, 0.55f) * 8f, true);
+            var steel = CampusMaterials.Lit("Steel", ProceduralTextures.Solid("steel", new Color(0.55f, 0.57f, 0.58f), 0.6f, 0.9f, 0.05f), Color.white, Vector2.one, 0.55f, null, true, metallic: 0.8f);
 
             var trunk = LowPoly.Cylinder(8, 0.5f, 0.32f, 1f);             // unit height, base radius 0.5
             var palmTrunk = LowPoly.Cylinder(7, 0.5f, 0.4f, 1f);
