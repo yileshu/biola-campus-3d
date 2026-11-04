@@ -348,14 +348,15 @@ namespace BiolaCampus.World.Campus
             float canopyY = groundY + 3.25f;
             Vector2 cc = mid + outward * 1.35f;
             float yaw = Mathf.Atan2(along.x, along.y) * Mathf.Rad2Deg;
-            Box(mb, (int)Sub.Trim, new Vector3(cc.x, canopyY, cc.y), new Vector3(0.25f, 0.25f, 0f) + new Vector3(2.7f, 0f, 5.0f) * 1f, yaw, swapXZ: true);
+            // Box local axes after the yaw: +Z along the wall, +X out from it.
+            Box(mb, (int)Sub.Trim, new Vector3(cc.x, canopyY, cc.y), new Vector3(2.7f, 0.25f, 5.0f), yaw);
             for (int s = -1; s <= 1; s += 2)
             {
                 Vector2 col = mid + outward * 2.45f + along * (s * 2.2f);
                 Box(mb, (int)Sub.Trim, new Vector3(col.x, groundY + 1.6f, col.y), new Vector3(0.32f, 3.2f, 0.32f), yaw);
             }
             Vector2 lc = mid + outward * 1.4f;
-            Box(mb, (int)Sub.Plinth, new Vector3(lc.x, groundY + 0.06f, lc.y), new Vector3(5.4f, 0.12f, 3.0f), yaw, swapXZ: true);
+            Box(mb, (int)Sub.Plinth, new Vector3(lc.x, groundY + 0.06f, lc.y), new Vector3(3.0f, 0.12f, 5.4f), yaw);
         }
 
         static void Beacon(MultiMesh mb, Vector2 c, float top)
