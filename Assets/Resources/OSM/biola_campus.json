@@ -1,0 +1,44 @@
+{
+ "meta": {
+  "source": "placeholder (not OpenStreetMap data)",
+  "attribution": "© OpenStreetMap contributors",
+  "license": "ODbL 1.0 — https://www.openstreetmap.org/copyright",
+  "fetchedUtc": "",
+  "placeholder": true,
+  "placeholderReason": "Overpass API was blocked in the environment that generated this commit; run the 'Refresh OSM cache' workflow",
+  "campusName": "Biola University",
+  "campusOsmId": "",
+  "centerLat": 33.9058,
+  "centerLon": -118.0148,
+  "centerHeight": 20.0,
+  "campusAreaM2": 0
+ },
+ "boundary": [
+  {
+   "pts": [
+    33.9058,
+    -118.0102541,
+    33.9084867,
+    -118.0115856,
+    33.9095995,
+    -118.0148,
+    33.9084867,
+    -118.0180144,
+    33.9058,
+    -118.0193459,
+    33.9031133,
+    -118.0180144,
+    33.9020005,
+    -118.0148,
+    33.9031133,
+    -118.0115856,
+    33.9058,
+    -118.0102541
+   ]
+  }
+ ],
+ "buildings": [],
+ "paths": [],
+ "areas": [],
+ "pois": []
+}
