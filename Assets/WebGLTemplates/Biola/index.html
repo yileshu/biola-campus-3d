@@ -49,6 +49,17 @@
       }, 4000);
     }
 
+    // iPhone/iPad (every iOS browser is WebKit): Cesium's experimental Web support currently fails to
+    // start there (loader error in WebKit). Show a clear message instead of a crash.
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    if (isIOS && !/[?&]force=1/.test(location.search)) {
+      document.querySelector("#bar").style.display = "none";
+      document.querySelector("#status").innerHTML =
+        "iPhone and iPad aren't supported yet. Please open this page in Chrome, Edge or Firefox on a desktop or laptop.<br>" +
+        "<small>(Add ?force=1 to the address to try anyway.)</small>";
+      throw new Error("iOS not supported");
+    }
+
     var buildUrl = "Build";
     var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
     var config = {

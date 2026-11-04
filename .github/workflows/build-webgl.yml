@@ -101,9 +101,11 @@ jobs:
   deploy:
     name: Deploy to GitHub Pages
     needs: build
-    # Runs on manual "deploy" or on pushes to main when the repo variable DEPLOY_PAGES is "true".
-    if: (github.event_name == 'workflow_dispatch' && inputs.deploy) || (github.event_name == 'push' && vars.DEPLOY_PAGES == 'true')
+    # Runs on every push to main (unless the repo variable DEPLOY_PAGES is "false") and on manual "deploy".
+    if: (github.event_name == 'workflow_dispatch' && inputs.deploy) || (github.event_name == 'push' && vars.DEPLOY_PAGES != 'false')
     runs-on: ubuntu-latest
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     permissions:
       pages: write
       id-token: write
@@ -114,3 +116,54 @@ jobs:
       - name: Deploy
         id: deployment
         uses: actions/deploy-pages@v4
+
+  capture:
+    name: Screenshots (headless Chrome)
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install Playwright + Chromium
+        working-directory: Tools/capture
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Capture the 4 fixed spots from the deployed site
+        working-directory: Tools/capture
+        run: node capture.mjs "${{ needs.deploy.outputs.page_url }}" "$GITHUB_WORKSPACE/shots" "run ${{ github.run_number }} @ ${{ github.sha }}"
+      - name: Show diagnostics
+        if: always()
+        run: grep -hE "BiolaDiag|BIOLA_SHOT|pageerror|http [45]" shots/console.log | head -80 || true
+      - name: Upload screenshots artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: shots
+      - name: Publish screenshots to the ci-screenshots branch
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -e
+          [ -d shots ] || exit 0
+          dir="runs/$(printf '%05d' ${{ github.run_number }})-${GITHUB_SHA::7}"
+          mkdir pub && cd pub
+          git init -q
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote add origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if git fetch -q --depth 1 origin ci-screenshots; then git checkout -q -b ci-screenshots FETCH_HEAD; else git checkout -q --orphan ci-screenshots; fi
+          mkdir -p "$dir" latest
+          cp ../shots/* "$dir"/
+          rm -rf latest && mkdir latest && cp ../shots/* latest/
+          git add -A
+          git commit -q -m "Screenshots for run ${{ github.run_number }} (${GITHUB_SHA::7})"
+          git push -q origin ci-screenshots
+          echo "Published to ci-screenshots:$dir"

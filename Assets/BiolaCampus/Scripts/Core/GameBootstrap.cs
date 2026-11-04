@@ -14,7 +14,7 @@ namespace BiolaCampus.Core
     [DefaultExecutionOrder(-100)]
     public class GameBootstrap : MonoBehaviour
     {
-        enum State { Title, Spawning, Playing, Paused }
+        enum State { Title, Spawning, Playing, Paused, Tour }
 
         State _state = State.Title;
         CampusMap _map;
@@ -56,6 +56,21 @@ namespace BiolaCampus.Core
             BuildPlayer();
             BuildUI();
             UpdateMenuStatus();
+            MaybeStartScreenshotTour();
+        }
+
+        /// <summary>CI screenshot mode: <c>?shot=all</c> skips the title and runs the fixed camera tour.</summary>
+        void MaybeStartScreenshotTour()
+        {
+            string shot = ScreenshotTour.RequestedShot;
+            if (string.IsNullOrEmpty(shot)) return;
+            string q = ScreenshotTour.Query("quality");
+            if (!string.IsNullOrEmpty(q) && System.Enum.TryParse(q, true, out TileQuality tq)) GameSettings.Quality = tq;
+            _menu.Close();
+            _hud.SetVisible(false);
+            _minimap.SetVisible(false);
+            _state = State.Tour;
+            gameObject.AddComponent<ScreenshotTour>().Begin(_camera, _world, _map, shot.ToLowerInvariant());
         }
 
         // ----------------------------------------------------------------------------- setup
@@ -136,6 +151,7 @@ namespace BiolaCampus.Core
 
             var attrCanvas = UIFactory.Canvas("Attribution Canvas", 50);
             attrCanvas.gameObject.AddComponent<AttributionBar>().Build(attrCanvas, !_world.IsOffline);
+            attrCanvas.gameObject.AddComponent<DiagnosticsOverlay>().Build(attrCanvas, _world);
         }
 
         void UpdateMenuStatus()

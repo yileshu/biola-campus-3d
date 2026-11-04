@@ -24,6 +24,16 @@ namespace BiolaCampus.World
         public string StatusMessage { get; private set; }
         public event Action<string> WentOffline;
 
+        // ---- diagnostics (shown on screen by DiagnosticsOverlay and logged as [BiolaDiag]) ----
+        public enum TileState { NoKey, Requesting, Streaming, Failed }
+        public TileState State { get; private set; } = TileState.Requesting;
+        public int TilesCreated { get; private set; }
+        public long FailureHttpStatus { get; private set; }
+        public string FailureMessage { get; private set; }
+        public string FailureCause { get; private set; }
+        public float FirstTileTime { get; private set; } = -1f;
+        float _startTime;
+
         public void Initialize(CampusMap map)
         {
             Map = map;
@@ -38,6 +48,9 @@ namespace BiolaCampus.World
 
             if (!SecretsLoader.HasGoogleKey)
             {
+                State = TileState.NoKey;
+                FailureCause = "No API key in the build (GOOGLE_MAPS_API_KEY secret / Assets/Config/secrets.json missing)";
+                Diag("FALLBACK: " + FailureCause);
                 GoOffline("No Google Map Tiles API key found (Assets/Config/secrets.json). Showing the offline OSM campus.");
                 return;
             }
@@ -59,12 +72,16 @@ namespace BiolaCampus.World
             Tileset.enableFrustumCulling = true;
             Tileset.enableFogCulling = true;
             ApplyQuality(GameSettings.Quality);
+            Tileset.OnTileGameObjectCreated += OnTileCreated;
+            _startTime = Time.realtimeSinceStartup;
             tsGo.SetActive(true);
+            Diag("Requesting Google Photorealistic 3D Tiles root.json (key present, page " + PageOrigin() + ")");
             StatusMessage = "Streaming Google Photorealistic 3D Tiles…";
         }
 
         void OnDestroy()
         {
+            if (Tileset != null) Tileset.OnTileGameObjectCreated -= OnTileCreated;
             Cesium3DTileset.OnCesium3DTilesetLoadFailure -= HandleLoadFailure;
             GameSettings.Changed -= OnSettingsChanged;
         }
@@ -95,10 +112,49 @@ namespace BiolaCampus.World
             }
         }
 
+        void OnTileCreated(GameObject tile)
+        {
+            TilesCreated++;
+            if (State != TileState.Streaming && State != TileState.Failed)
+            {
+                State = TileState.Streaming;
+                FirstTileTime = Time.realtimeSinceStartup - _startTime;
+                Diag($"Google 3D Tiles OK: first tile after {FirstTileTime:0.0}s");
+            }
+        }
+
+        public static string PageOrigin()
+        {
+            string u = Application.absoluteURL;
+            if (string.IsNullOrEmpty(u)) return Application.isEditor ? "Unity Editor" : "standalone player";
+            int q = u.IndexOf('?');
+            return q >= 0 ? u.Substring(0, q) : u;
+        }
+
+        public static void Diag(string message) => Debug.Log("[BiolaDiag] " + SecretsLoader.Redact(message));
+
+        /// <summary>Best guess at why a tileset request failed, from the HTTP status.</summary>
+        public static string ExplainFailure(long status, string message)
+        {
+            if (status == 403)
+                return "HTTP 403 — key rejected: Map Tiles API not enabled for the key's project, billing off, or the key's " +
+                       "website restriction does not include " + PageOrigin();
+            if (status == 400) return "HTTP 400 — bad request (malformed key or URL)";
+            if (status == 401) return "HTTP 401 — key invalid";
+            if (status == 429) return "HTTP 429 — Map Tiles API quota exceeded";
+            if (status == 0) return "No HTTP response — network error or CORS (" + message + ")";
+            return $"HTTP {status} — {message}";
+        }
+
         void HandleLoadFailure(Cesium3DTilesetLoadFailureDetails details)
         {
             if (details.tileset != Tileset) return;
             string msg = SecretsLoader.Redact(details.message ?? "unknown error");
+            State = TileState.Failed;
+            FailureHttpStatus = details.httpStatusCode;
+            FailureMessage = msg;
+            FailureCause = ExplainFailure(details.httpStatusCode, msg);
+            Diag("FALLBACK: Google 3D Tiles failed. " + FailureCause);
             Debug.LogWarning($"[Biola] Google 3D Tiles failed to load (HTTP {details.httpStatusCode}): {msg}");
             string hint = details.httpStatusCode == 403
                 ? "The API key was rejected (check Map Tiles API is enabled and the website restriction matches this site)."
@@ -109,6 +165,12 @@ namespace BiolaCampus.World
         public void GoOffline(string reason)
         {
             if (Offline != null) return;
+            if (State == TileState.Requesting || State == TileState.Streaming)
+            {
+                State = TileState.Failed;
+                FailureCause ??= reason;
+            }
+            Diag("Switching to the offline OSM campus: " + reason);
             StatusMessage = reason;
             if (Tileset != null) Tileset.gameObject.SetActive(false);
             var go = new GameObject("Offline OSM Campus");

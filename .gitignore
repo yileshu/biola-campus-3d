@@ -52,3 +52,7 @@ __pycache__/
 *.pyc
 # CI scratch
 /artifacts/
+
+# Capture tooling
+Tools/capture/node_modules/
+Tools/capture/package-lock.json

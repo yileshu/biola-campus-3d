@@ -24,6 +24,8 @@ namespace BiolaCampus.Core
                 case KeyCode.E: return Key.E;
                 case KeyCode.F: return Key.F;
                 case KeyCode.M: return Key.M;
+                case KeyCode.N: return Key.N;
+                case KeyCode.F3: return Key.F3;
                 case KeyCode.L: return Key.L;
                 case KeyCode.R: return Key.R;
                 case KeyCode.C: return Key.C;
