@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en-us">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>{{{ PRODUCT_NAME }}}</title>
+  <!-- Static hosts such as GitHub Pages cannot send the COOP/COEP headers that Unity's
+       multithreaded Web build (SharedArrayBuffer) needs; this service worker adds them.
+       On hosts that already send the headers it does nothing. -->
+  <script src="coi-serviceworker.js"></script>
+  <style>
+    html, body { margin: 0; padding: 0; height: 100%; background: #0f1218; overflow: hidden; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #eee; }
+    #unity-canvas { width: 100%; height: 100%; display: block; background: #0f1218; outline: none; }
+    #overlay { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; background: #0f1218; transition: opacity .4s; }
+    #overlay h1 { margin: 0; font-size: 34px; letter-spacing: .06em; }
+    #overlay h1 span { color: #cc2233; }
+    #overlay p { margin: 0; color: #aab; font-size: 14px; max-width: 560px; text-align: center; line-height: 1.5; }
+    #bar { width: 360px; max-width: 80vw; height: 8px; border-radius: 4px; background: #262b36; overflow: hidden; }
+    #fill { width: 0; height: 100%; background: #cc2233; transition: width .2s; }
+    #warning { position: fixed; left: 50%; top: 14px; transform: translateX(-50%); max-width: 90vw; background: #3a1f1f; color: #ffd9d9; padding: 10px 16px; border-radius: 6px; font-size: 14px; display: none; z-index: 10; }
+    #attribution { position: fixed; right: 8px; bottom: 6px; font-size: 11px; color: #bbb; }
+  </style>
+</head>
+<body>
+  <canvas id="unity-canvas" tabindex="-1"></canvas>
+  <div id="overlay">
+    <h1><span>BIOLA</span> CAMPUS 3D</h1>
+    <div id="bar"><div id="fill"></div></div>
+    <p id="status">Loading…</p>
+    <p>Unofficial fan project. 3D tiles streamed from Google; map data © OpenStreetMap contributors.</p>
+  </div>
+  <div id="warning"></div>
+  <script>
+    var canvas = document.querySelector("#unity-canvas");
+    var warning = document.querySelector("#warning");
+    function showBanner(msg, type) {
+      warning.style.display = "block";
+      warning.innerHTML += "<div>" + msg + "</div>";
+      if (type !== "error") setTimeout(function () { warning.style.display = "none"; warning.innerHTML = ""; }, 6000);
+    }
+
+    if (!window.crossOriginIsolated) {
+      // coi-serviceworker reloads the page once after installing; if we are still not isolated, tell the user.
+      setTimeout(function () {
+        if (!window.crossOriginIsolated)
+          document.querySelector("#status").textContent =
+            "This page is not cross-origin isolated, so multithreading is unavailable. Serve it over HTTPS with " +
+            "Cross-Origin-Opener-Policy: same-origin and Cross-Origin-Embedder-Policy: require-corp (see README).";
+      }, 4000);
+    }
+
+    var buildUrl = "Build";
+    var loaderUrl = buildUrl + "/{{{ LOADER_FILENAME }}}";
+    var config = {
+      arguments: [],
+      dataUrl: buildUrl + "/{{{ DATA_FILENAME }}}",
+      frameworkUrl: buildUrl + "/{{{ FRAMEWORK_FILENAME }}}",
+#if USE_THREADS
+      workerUrl: buildUrl + "/{{{ WORKER_FILENAME }}}",
+#endif
+#if USE_WASM
+      codeUrl: buildUrl + "/{{{ CODE_FILENAME }}}",
+#endif
+#if MEMORY_FILENAME
+      memoryUrl: buildUrl + "/{{{ MEMORY_FILENAME }}}",
+#endif
+#if SYMBOLS_FILENAME
+      symbolsUrl: buildUrl + "/{{{ SYMBOLS_FILENAME }}}",
+#endif
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: {{{ JSON.stringify(COMPANY_NAME) }}},
+      productName: {{{ JSON.stringify(PRODUCT_NAME) }}},
+      productVersion: {{{ JSON.stringify(PRODUCT_VERSION) }}},
+      showBanner: showBanner,
+      matchWebGLToCanvasSize: true,
+      devicePixelRatio: Math.min(window.devicePixelRatio || 1, 2)
+    };
+
+    var script = document.createElement("script");
+    script.src = loaderUrl;
+    script.onload = function () {
+      createUnityInstance(canvas, config, function (progress) {
+        document.querySelector("#fill").style.width = (100 * progress) + "%";
+        document.querySelector("#status").textContent = "Loading engine… " + Math.round(100 * progress) + "%";
+      }).then(function (unityInstance) {
+        var o = document.querySelector("#overlay");
+        o.style.opacity = 0;
+        setTimeout(function () { o.remove(); }, 450);
+        canvas.focus();
+      }).catch(function (message) {
+        document.querySelector("#status").textContent = "Failed to start: " + message;
+      });
+    };
+    document.body.appendChild(script);
+  </script>
+</body>
+</html>

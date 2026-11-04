@@ -1,0 +1,116 @@
+name: Build Web (WebGL) player
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      webgpu:
+        description: "Add WebGPU (experimental, with WebGL 2 fallback)"
+        type: boolean
+        default: false
+      deploy:
+        description: "Deploy to GitHub Pages after the build"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: webgl-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build WebGL
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: false
+
+      - name: Secret scan (abort if a Google API key is committed)
+        run: bash Tools/git/check-secrets.sh
+
+      - name: Refresh OSM cache if it is still a placeholder (not committed)
+        continue-on-error: true
+        run: python3 Tools/osm/fetch_osm.py --if-placeholder
+
+      - name: Write Assets/Config/secrets.json from the GOOGLE_MAPS_API_KEY secret
+        env:
+          GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+        run: |
+          if [ -z "${GOOGLE_MAPS_API_KEY}" ]; then
+            echo "::warning::GOOGLE_MAPS_API_KEY secret is not set - the build will run in offline OSM mode."
+            exit 0
+          fi
+          python3 - <<'PY'
+          import json, os
+          with open("Assets/Config/secrets.json", "w") as f:
+              json.dump({"googleMapsApiKey": os.environ["GOOGLE_MAPS_API_KEY"]}, f)
+          PY
+          echo "secrets.json written (value masked)."
+
+      - name: Free disk space for the Unity image
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          df -h /
+
+      - name: Cache Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-WebGL-${{ hashFiles('Packages/manifest.json', 'Packages/packages-lock.json', 'ProjectSettings/ProjectVersion.txt') }}
+          restore-keys: Library-WebGL-
+
+      - name: Build with GameCI
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          buildName: BiolaCampus3D
+          buildMethod: BiolaCampus.EditorTools.BuildScript.BuildWebGL
+          customParameters: -webgpu ${{ inputs.webgpu && 'true' || 'false' }}
+          allowDirtyBuild: true
+          versioning: None
+
+      - name: Remove secrets from the workspace
+        if: always()
+        run: rm -f Assets/Config/secrets.json && sudo rm -rf Assets/Resources/Generated || true
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BiolaCampus3D-WebGL
+          path: build/WebGL/BiolaCampus3D
+          if-no-files-found: error
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: build/WebGL/BiolaCampus3D
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    # Runs on manual "deploy" or on pushes to main when the repo variable DEPLOY_PAGES is "true".
+    if: (github.event_name == 'workflow_dispatch' && inputs.deploy) || (github.event_name == 'push' && vars.DEPLOY_PAGES == 'true')
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
