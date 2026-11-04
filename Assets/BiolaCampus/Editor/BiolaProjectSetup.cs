@@ -247,7 +247,16 @@ namespace BiolaCampus.EditorTools
                 GraphicsSettings.defaultRenderPipeline = medium;
                 Debug.Log("[Biola] URP enabled (default asset: URP_Medium).");
             }
-            // Clear per-quality-level overrides so every level uses the default unless RenderingSetup overrides.
+            // URP needs its global settings asset (default volume profile, shader resources) for builds. The
+            // editor normally creates it when URP is first enabled interactively; do it explicitly for CI.
+            try
+            {
+                var gsType = typeof(UniversalRenderPipelineAsset).Assembly.GetType("UnityEngine.Rendering.Universal.UniversalRenderPipelineGlobalSettings");
+                var ensure = gsType?.GetMethod("Ensure", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic);
+                var gs = ensure?.Invoke(null, new object[] { true });
+                Debug.Log("[Biola] URP global settings: " + (gs != null ? AssetDatabase.GetAssetPath((UnityEngine.Object)gs) : "not found"));
+            }
+            catch (System.Exception e) { Debug.LogWarning("[Biola] Could not ensure URP global settings: " + e.Message); }
             AssetDatabase.SaveAssets();
         }
 
