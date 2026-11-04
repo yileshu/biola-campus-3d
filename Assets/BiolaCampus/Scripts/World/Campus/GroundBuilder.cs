@@ -131,7 +131,10 @@ namespace BiolaCampus.World.Campus
                 if (!map.IsInsideCampus(Polygon2D.Centroid(a.Outline))) continue;
                 if (a.Name != null && a.Name.ToLowerInvariant().Contains("sand")) s = Surface.Sand;
                 if (!bySurface.TryGetValue(s.Value, out var acc)) bySurface[s.Value] = acc = new MeshAccumulator();
-                float lift = s == Surface.Water ? AreaLift + 0.02f : AreaLift + (s == Surface.Asphalt ? 0.01f : 0f);
+                // Layering: parking lowest, then plazas/planting, fields and lawns, water on top (OSM often
+                // nests a field inside a parking polygon, e.g. Barbour Field in Parking Lot R).
+                float lift = AreaLift + (s == Surface.Asphalt ? 0f : s == Surface.Concrete || s == Surface.Mulch || s == Surface.Granite ? 0.015f
+                                       : s == Surface.Water ? 0.05f : 0.03f);
                 Drape(acc, a.Outline, t, lift, s == Surface.Asphalt ? 8f : 6f);
             }
             foreach (var kv in bySurface)

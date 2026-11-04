@@ -108,6 +108,7 @@ namespace BiolaCampus.Core
             _camera.nearClipPlane = 0.1f;
             _camera.farClipPlane = 20000f;
             _camera.fieldOfView = 60f;
+            if (_camera.GetComponent<AdaptiveNearPlane>() == null) _camera.gameObject.AddComponent<AdaptiveNearPlane>();
             UpdateTitleOrbit(0f);
         }
 

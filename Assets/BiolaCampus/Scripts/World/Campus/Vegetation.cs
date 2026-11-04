@@ -102,11 +102,14 @@ namespace BiolaCampus.World.Campus
                     }
                     else
                     {
-                        float trunkH = h * 0.42f;
+                        // Canopy half-height between 0.55 r and 0.95 r (no tall "eggs" for narrow trees),
+                        // sitting on top of the trunk with its crown at the lidar height.
+                        float halfY = Mathf.Clamp((h - 2f) * 0.35f, r * 0.55f, r * 0.95f);
+                        float cy = y + h - halfY;
+                        float trunkH = Mathf.Max(1.5f, cy - y);
                         float tw = Mathf.Clamp(r * 0.11f + 0.15f, 0.25f, 0.9f);
-                        bTrunk.Matrices.Add(Matrix4x4.TRS(new Vector3(p.x, y, p.y), rot, new Vector3(tw, trunkH + r * 0.3f, tw)));
-                        float cy = y + trunkH + (h - trunkH) * 0.5f;
-                        var scale = new Vector3(r, Mathf.Max((h - trunkH) * 0.55f, r * 0.6f), r);
+                        bTrunk.Matrices.Add(Matrix4x4.TRS(new Vector3(p.x, y, p.y), rot, new Vector3(tw, trunkH, tw)));
+                        var scale = new Vector3(r, halfY, r);
                         var batch = tr.kind == "jacaranda" ? bJac : (Hash(tr.x + 3, tr.z) < 0.5f ? bOak : bOak2);
                         batch.Matrices.Add(Matrix4x4.TRS(new Vector3(p.x, cy, p.y), rot, scale));
                         AddCollider(colliders, p, y, Mathf.Max(0.25f, tw * 0.5f), trunkH);

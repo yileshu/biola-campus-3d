@@ -50,6 +50,12 @@ page.on('console', (msg) => {
       } catch (e) {
         log(`screenshot ${name} failed: ${e.message}`);
       }
+      try {
+        // Tell the game it may move on (read by BiolaShot.jslib).
+        await page.evaluate(() => { window.biolaShotAck = (window.biolaShotAck | 0) + 1; });
+      } catch (e) {
+        log(`ack ${name} failed: ${e.message}`);
+      }
     });
   }
   if (text.includes('BIOLA_SHOT_DONE')) done = true;

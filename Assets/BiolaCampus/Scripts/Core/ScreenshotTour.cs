@@ -15,6 +15,12 @@ namespace BiolaCampus.Core
     /// </summary>
     public class ScreenshotTour : MonoBehaviour
     {
+#if UNITY_WEBGL && !UNITY_EDITOR
+        [System.Runtime.InteropServices.DllImport("__Internal")] static extern int BiolaShotAck();
+#else
+        static int BiolaShotAck() => -1;
+#endif
+        int _ackAtReady;
         public struct Spot
         {
             public string Name;
@@ -189,7 +195,11 @@ namespace BiolaCampus.Core
 
             if (_ready)
             {
-                if (_t > HoldTime) Next();
+                // Hold still until the capture script confirms the screenshot (or a generous timeout:
+                // software rendering on CI can take many seconds per frame).
+                int ack = BiolaShotAck();
+                bool acked = ack >= 0 ? ack > _ackAtReady : _t > HoldTime;
+                if (acked || _t > 180f) Next();
                 return;
             }
 
@@ -199,6 +209,7 @@ namespace BiolaCampus.Core
             if ((_t > MinWait && groundOk && _settled > SettleTime) || _t > MaxWait)
             {
                 _ready = true;
+                _ackAtReady = BiolaShotAck();
                 Debug.Log($"BIOLA_SHOT_READY {s.Name} progress={progress:0.0} tiles={_world.TilesCreated} ground={(_groundFound ? _groundY.ToString("0.0") : "none")} wait={_t:0}s fps={(UI.DiagnosticsOverlay.Instance != null ? UI.DiagnosticsOverlay.Instance.Fps : 0):0}");
                 _t = 0f;
             }
