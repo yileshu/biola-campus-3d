@@ -14,7 +14,7 @@ const [url, outDir = 'screenshots', label = ''] = process.argv.slice(2);
 if (!url) { console.error('usage: capture.mjs <url> <outDir> [label]'); process.exit(2); }
 fs.mkdirSync(outDir, { recursive: true });
 
-const TOTAL_TIMEOUT_MS = 25 * 60 * 1000;
+const TOTAL_TIMEOUT_MS = 35 * 60 * 1000;
 const consoleLines = [];
 const shots = [];
 let done = false;
@@ -42,9 +42,14 @@ page.on('console', (msg) => {
     const name = m[1];
     pending = pending.then(async () => {
       const file = path.join(outDir, `${name}.png`);
-      await page.screenshot({ path: file });
-      shots.push({ name, file, info: text });
-      log(`saved ${file}`);
+      try {
+        // Software (SwiftShader) rendering on a GPU-less runner can take seconds per frame.
+        await page.screenshot({ path: file, timeout: 180000 });
+        shots.push({ name, file, info: text });
+        log(`saved ${file}`);
+      } catch (e) {
+        log(`screenshot ${name} failed: ${e.message}`);
+      }
     });
   }
   if (text.includes('BIOLA_SHOT_DONE')) done = true;

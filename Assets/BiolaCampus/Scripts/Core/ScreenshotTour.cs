@@ -23,7 +23,7 @@ namespace BiolaCampus.Core
             public bool GroundRelative;
         }
 
-        const float MinWait = 8f, MaxWait = 150f, SettleTime = 3f, HoldTime = 5f;
+        const float MinWait = 8f, MaxWait = 240f, SettleTime = 3f, HoldTime = 20f;
 
         public static string RequestedShot => Query("shot");
 
@@ -173,8 +173,10 @@ namespace BiolaCampus.Core
 
             if (s.GroundRelative && !_groundFound)
             {
+                // Ignore hits on coarse, low-detail tiles: their chords sag hundreds of metres below the
+                // real ground until the finer tiles arrive. The origin sits near ground level.
                 if (Physics.Raycast(new Vector3(s.Position.x, 1500f, s.Position.z), Vector3.down, out var hit, 3000f,
-                        Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore))
+                        Physics.DefaultRaycastLayers, QueryTriggerInteraction.Ignore) && Mathf.Abs(hit.point.y) < 120f)
                 {
                     _groundY = hit.point.y;
                     _groundFound = true;

@@ -121,7 +121,7 @@ jobs:
     name: Screenshots (headless Chrome)
     needs: deploy
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 50
     permissions:
       contents: write
     steps:
