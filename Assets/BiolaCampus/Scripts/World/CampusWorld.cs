@@ -88,9 +88,10 @@ namespace BiolaCampus.World
             Tileset.generateSmoothNormals = true;
             ApplyQuality(GameSettings.Quality);
             Tileset.OnTileGameObjectCreated += OnTileCreated;
-            if (ownCampus) Campus.GoogleClipping.Apply(Tileset, Georeference, map);
             _startTime = Time.realtimeSinceStartup;
             tsGo.SetActive(true);
+            // Added after activation: CesiumRasterOverlay.Refresh() re-adds itself to the live tileset.
+            if (ownCampus) Campus.GoogleClipping.Apply(Tileset, Georeference, map);
             Diag("Requesting Google Photorealistic 3D Tiles root.json (key present, page " + PageOrigin() + ")");
             StatusMessage = "Streaming Google Photorealistic 3D Tiles…";
         }

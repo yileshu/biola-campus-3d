@@ -162,6 +162,8 @@ namespace BiolaCampus.World.Campus
             }
             polygon.document = doc;
 
+            // The tileset is already active: each property setter below calls Refresh() (remove + re-add),
+            // so the overlay ends up registered once with the final key and polygon.
             var overlay = tileset.gameObject.AddComponent<CesiumPolygonRasterOverlay>();
             overlay.materialKey = "Clipping";       // matches the clipping slot of Cesium's default tileset material
             overlay.showCreditsOnScreen = false;
