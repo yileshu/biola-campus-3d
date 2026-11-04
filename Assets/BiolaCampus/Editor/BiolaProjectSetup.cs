@@ -31,7 +31,7 @@ namespace BiolaCampus.EditorTools
             if (Application.isBatchMode) return; // CI calls RunAll() explicitly from BuildScript
             EditorApplication.delayCall += () =>
             {
-                if (!File.Exists(ScenePath) || !Directory.Exists(MaterialsDir))
+                if (!File.Exists(ScenePath) || !File.Exists(MaterialsDir + "/StdLitTemplate.mat"))
                 {
                     Debug.Log("[Biola] First open detected — running Biola ▸ Setup Project.");
                     RunAll(openScene: true);
@@ -91,6 +91,10 @@ namespace BiolaCampus.EditorTools
             MakeMaterial("BuildingNamed", "Standard", new Color(0.86f, 0.82f, 0.74f));
             foreach (var k in new[] { "parking", "pitch", "grass", "park" })
                 MakeMaterial("Area_" + k, "Standard", Color.gray);
+            // Lit templates for runtime-generated campus materials (CampusMaterials). They enable the exact
+            // keyword set used at runtime so those shader variants are compiled into the player.
+            MakeLitTemplate("StdLitTemplate", "Standard", false);
+            MakeLitTemplate("StdLitInstancedTemplate", "Standard", true);
             var sky = MakeMaterial("Sky", "Skybox/Procedural", Color.white);
             if (sky != null)
             {
@@ -99,6 +103,31 @@ namespace BiolaCampus.EditorTools
                 if (sky.HasProperty("_Exposure")) sky.SetFloat("_Exposure", 1.2f);
                 EditorUtility.SetDirty(sky);
             }
+        }
+
+        public static Material MakeLitTemplate(string name, string shaderName, bool instanced)
+        {
+            string path = $"{MaterialsDir}/{name}.mat";
+            var m = AssetDatabase.LoadAssetAtPath<Material>(path);
+            bool create = m == null;
+            if (create)
+            {
+                var shader = Shader.Find(shaderName);
+                if (shader == null) { Debug.LogWarning("[Biola] Shader not found: " + shaderName); return null; }
+                m = new Material(shader) { name = name };
+            }
+            // Dummy textures make the keywords meaningful; runtime materials replace them.
+            m.SetTexture("_BumpMap", Texture2D.normalTexture);
+            m.SetTexture("_MetallicGlossMap", Texture2D.whiteTexture);
+            m.SetTexture("_EmissionMap", Texture2D.blackTexture);
+            m.EnableKeyword("_NORMALMAP");
+            m.EnableKeyword("_METALLICSPECGLOSSMAP");
+            m.EnableKeyword("_METALLICGLOSSMAP");
+            m.EnableKeyword("_EMISSION");
+            m.globalIlluminationFlags = MaterialGlobalIlluminationFlags.RealtimeEmissive;
+            m.enableInstancing = instanced;
+            if (create) AssetDatabase.CreateAsset(m, path); else EditorUtility.SetDirty(m);
+            return m;
         }
 
         static Material MakeMaterial(string name, string shaderName, Color color)

@@ -1,0 +1,31 @@
+name: Refresh lidar terrain
+
+# Rebuilds Assets/Resources/Terrain/biola_terrain.json and Assets/Resources/OSM/biola_lidar.json
+# from USGS 3DEP lidar (public domain) and commits them. Run after "Refresh OSM cache".
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install "laspy[lazrs]" numpy
+      - name: Build terrain, building heights and trees from USGS 3DEP
+        run: python3 Tools/lidar/fetch_lidar.py
+      - name: Secret scan
+        run: bash Tools/git/check-secrets.sh
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Assets/Resources/Terrain Assets/Resources/OSM/biola_lidar.json
+          if git diff --cached --quiet; then echo "No changes."; exit 0; fi
+          git commit -m "Refresh lidar terrain (USGS 3DEP, public domain)"
+          git push

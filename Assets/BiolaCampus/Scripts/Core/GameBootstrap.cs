@@ -42,9 +42,21 @@ namespace BiolaCampus.Core
             SetupLighting();
             SetupCamera();
 
+            // Our own campus core (USGS lidar terrain + OSM/lidar buildings). The georeference origin is
+            // moved onto the lidar ground at the campus centre so Unity Y = 0 is ground level there.
+            bool ownCampus = World.Campus.HeroCampus.Available(out var terrain, out var lidar) && _map.HasBoundary && !_map.IsPlaceholder;
+            if (ownCampus)
+                _map.Frame = new Geo.EnuFrame(_map.Frame.OriginLat, _map.Frame.OriginLon, terrain.Info.originEllipsoidHeight);
+
             var worldGo = new GameObject("World");
             _world = worldGo.AddComponent<CampusWorld>();
-            _world.Initialize(_map);
+            _world.Initialize(_map, ownCampus);
+            if (ownCampus)
+            {
+                var hero = new GameObject("Biola campus core (our models)").AddComponent<World.Campus.HeroCampus>();
+                hero.transform.SetParent(worldGo.transform, false);
+                hero.Build(_map, terrain, lidar);
+            }
             _world.WentOffline += reason => { _menu?.SetStatus(reason); _hud?.Toast(reason, 8f); };
 
             if (_map.HasBoundary)

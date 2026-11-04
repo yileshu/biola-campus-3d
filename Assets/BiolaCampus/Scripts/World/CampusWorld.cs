@@ -34,9 +34,13 @@ namespace BiolaCampus.World
         public float FirstTileTime { get; private set; } = -1f;
         float _startTime;
 
-        public void Initialize(CampusMap map)
+        /// <summary>True when our own campus core (lidar terrain + procedural buildings) replaces Google inside the boundary.</summary>
+        public bool OwnCampus { get; private set; }
+
+        public void Initialize(CampusMap map, bool ownCampus = false)
         {
             Map = map;
+            OwnCampus = ownCampus;
 
             var geoGo = new GameObject("CesiumGeoreference (Biola)");
             geoGo.transform.SetParent(transform, false);
@@ -64,7 +68,9 @@ namespace BiolaCampus.World
             Tileset.tilesetSource = CesiumDataSource.FromUrl;
             Tileset.url = GoogleTilesRootUrl + "?key=" + SecretsLoader.GoogleMapsApiKey;
             Tileset.showCreditsOnScreen = true;            // Google + data-provider attributions
-            Tileset.createPhysicsMeshes = true;            // MeshColliders so the player can walk on tiles
+            // With our own campus core the player only ever walks on our terrain and buildings, so Google
+            // tiles need no colliders (faster). Without it, tile MeshColliders are the walkable ground.
+            Tileset.createPhysicsMeshes = !ownCampus;
             // Ground-level tuning: no holes while children load, keep ancestors/siblings resident so
             // turning around does not pop, and keep (coarser) tiles outside the view frustum instead of
             // unloading them.
@@ -82,6 +88,7 @@ namespace BiolaCampus.World
             Tileset.generateSmoothNormals = true;
             ApplyQuality(GameSettings.Quality);
             Tileset.OnTileGameObjectCreated += OnTileCreated;
+            if (ownCampus) Campus.GoogleClipping.Apply(Tileset, Georeference, map);
             _startTime = Time.realtimeSinceStartup;
             tsGo.SetActive(true);
             Diag("Requesting Google Photorealistic 3D Tiles root.json (key present, page " + PageOrigin() + ")");
@@ -182,6 +189,7 @@ namespace BiolaCampus.World
             Diag("Switching to the offline OSM campus: " + reason);
             StatusMessage = reason;
             if (Tileset != null) Tileset.gameObject.SetActive(false);
+            if (OwnCampus) { WentOffline?.Invoke(reason); return; }   // our campus core is already there
             var go = new GameObject("Offline OSM Campus");
             go.transform.SetParent(transform, false);
             Offline = go.AddComponent<OfflineCampus>();

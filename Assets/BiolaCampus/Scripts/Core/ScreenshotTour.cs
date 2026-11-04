@@ -97,6 +97,8 @@ namespace BiolaCampus.Core
                 foreach (var b in anchors) quad += b.Centroid;
                 quad /= anchors.Count;
             }
+            foreach (var area in map.Areas)
+                if (area.Name == "Metzger Lawn") { quad = Geo.Polygon2D.Centroid(area.Outline); break; }
             quad = NearestOpenPoint(map, quad);
             var lib = Find("Library");
             Vector2 quadLook = lib != null ? lib.Centroid : center;

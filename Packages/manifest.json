@@ -10,7 +10,6 @@
   ],
   "dependencies": {
     "com.cesium.unity": "1.26.1",
-    "com.unity.ugui": "2.0.0",
     "com.unity.modules.animation": "1.0.0",
     "com.unity.modules.audio": "1.0.0",
     "com.unity.modules.imageconversion": "1.0.0",
@@ -20,6 +19,8 @@
     "com.unity.modules.ui": "1.0.0",
     "com.unity.modules.uielements": "1.0.0",
     "com.unity.modules.unitywebrequest": "1.0.0",
-    "com.unity.modules.unitywebrequesttexture": "1.0.0"
+    "com.unity.modules.unitywebrequesttexture": "1.0.0",
+    "com.unity.splines": "2.8.2",
+    "com.unity.ugui": "2.0.0"
   }
 }
