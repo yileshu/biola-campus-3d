@@ -4,13 +4,16 @@ An unofficial, fan-made, walkable 3D recreation of **Biola University** (La Mira
 runs in the browser. Built with **Unity 6**, **Cesium for Unity** and **Google Photorealistic 3D Tiles**,
 with building names, a minimap and the campus boundary from **OpenStreetMap**.
 
-* First-person walking (WASD + mouse, sprint, jump, gravity) with collision against the streamed 3D tiles
-* Drone / fly mode (**F**) for a bird's-eye view
+* **Hybrid world:** on campus you walk through our own models (lidar terrain, every OSM building modelled
+  procedurally, 22 detailed "hero" buildings, ~900 lidar-detected trees, lamps, benches). Beyond the campus
+  boundary the Google Photorealistic 3D Tiles take over (they are clipped away inside the boundary).
+* URP rendering: real sun for La Mirada, soft shadows, SSAO (High), bloom, ACES tonemapping, colour
+  grading, distance fog; **N** toggles day/night with working street lamps and lit windows
+* Quality presets Low / Medium / High (Web defaults to Medium, the Windows build to High)
+* First-person walking (WASD + mouse, sprint, jump, gravity) and a drone mode (**F**)
 * Building names when you look at or walk up to a named building, plus floating labels
-* Minimap drawn from OpenStreetMap, with a player marker (**M** enlarges it)
-* An invisible wall along the OSM campus boundary keeps you on campus
-* Title screen with Start, Controls, Settings (mouse sensitivity, FOV, quality, invert Y, labels) and Credits
-* Offline fallback: without a key, or if Google rejects it, the campus is extruded from OSM footprints
+* Minimap drawn from OpenStreetMap (**M** enlarges it); invisible wall along the campus boundary
+* Title screen with Start, Controls, Settings and Credits; on-screen renderer diagnostics (**F3**)
 
 > Not affiliated with or endorsed by Biola University or Google.
 
@@ -22,6 +25,8 @@ with building names, a minimap and the campus boundary from **OpenStreetMap**.
 2. [Repository secrets (GitHub Actions)](#2-repository-secrets-github-actions)
 3. [Open the project in Unity locally](#3-open-the-project-in-unity-locally)
 4. [OpenStreetMap data](#4-openstreetmap-data)
+   · [How the campus is built (lidar, hero buildings, clipping)](#how-the-campus-is-built)
+   · [CI screenshots and diagnostics](#ci-screenshots-and-diagnostics)
 5. [Deploy the Web build](#5-deploy-the-web-build)
 6. [**Restrict your API key once it is hosted**](#6-restrict-your-api-key-once-it-is-hosted)
 7. [Web build settings](#7-web-build-settings)
@@ -35,16 +40,16 @@ with building names, a minimap and the campus boundary from **OpenStreetMap**.
 
 ## 1. Status and known gaps
 
-The project was written in an environment that **could not run Unity** and had **no access** to
-OpenStreetMap/Overpass, cesium.com or the Unity/Cesium package registries. So:
-
-| Item | State | What to do |
-|---|---|---|
-| C# code | Type-checked against Unity 2021.3 engine reference assemblies plus stubs for uGUI, the Input System and Cesium. A few Unity 6-only editor APIs (Web memory settings, `NamedBuildTarget`, IL2CPP code generation) could not be checked. **Not yet compiled inside Unity.** | The first GameCI run (or opening the project locally) is the real compile test. |
-| OSM cache (`Assets/Resources/OSM/biola_campus.json`) | **Placeholder.** Overpass was blocked, so the file has no buildings or paths, a fake ~420 m octagon boundary, and a *provisional* centre (33.9058, −118.0148) taken from a web listing, **not from OSM**. | Run the **Refresh OSM cache** workflow once (Actions tab → *Refresh OSM cache* → *Run workflow*), or run `python3 Tools/osm/fetch_osm.py` locally and commit. The build workflow also fetches real data before building if the cache is still a placeholder, but that data is not committed. |
-| Georeference origin | Comes from the OSM cache (centroid of the `amenity=university` + `name~"Biola"` polygon). Until the cache is refreshed it uses the provisional centre above. | Refresh the OSM cache. |
-| Google logo | A text wordmark is shown. Google's attribution guidelines ask for the official logo. | Put the logo PNG from Google's Map Tiles attribution page at `Assets/Resources/Attribution/google_logo.png`; it is picked up automatically. |
-| Push to GitHub | This repository was created locally with milestone commits and no remote. | `git remote add origin …` then `git push -u origin main`. |
+| Item | State |
+|---|---|
+| Build | The WebGL build compiles and deploys from CI (GameCI, Unity 6000.3.28f1); a Windows build runs in the same workflow. |
+| Google 3D Tiles | Verified streaming from the GitHub Pages site (first tile ≈ 4 s; key, referrer, CORS and quota OK). |
+| OSM data | Real data from Overpass (`way/126445769`, 53 buildings, 104 paths). Refresh with the *Refresh OSM cache* workflow. |
+| Lidar | USGS 3DEP `CA_LosAngeles_1_B23` (public domain). Terrain, building heights and trees are committed; refresh with *Refresh lidar terrain*. The geoid offset (NAVD88 → ellipsoid) used a −35.4 m constant because NOAA's API was unreachable when the files were generated; the CI refresh uses NOAA's GEOID18 value. |
+| Facade colours | Chosen from written descriptions of the campus, not photos (photos could not be viewed from the authoring environment). Edit `ProceduralTextures.Styles` / `HeroCampus.StyleFor` to refine. |
+| iPhone / iPad | Not supported yet (Cesium's experimental Web support fails to start in WebKit); the page says so. Desktop Chrome/Edge/Firefox work. |
+| Google logo | A text wordmark is shown. Put the official logo PNG at `Assets/Resources/Attribution/google_logo.png`; it is picked up automatically. |
+| Frame rate | Not measurable in CI (headless Chrome renders on the CPU at 1–5 fps). Check the FPS readout (**F3**) on your laptop; switch to Low if Medium is below 30 fps. |
 
 ---
 
@@ -136,6 +141,39 @@ and on the Credits screen.
 
 ---
 
+## How the campus is built
+
+Everything inside the campus boundary is our own geometry, generated at start-up from open data:
+
+| Layer | Source | Code |
+|---|---|---|
+| Terrain (2 m grid, bare earth) | USGS 3DEP lidar, ground-classified points | `Tools/lidar/fetch_lidar.py` → `GroundBuilder` |
+| Building heights, eave/ridge, flat vs pitched roof | USGS 3DEP lidar points inside each OSM footprint | `fetch_lidar.py` → `BuildingBuilder` |
+| Footprints, names, walkways, roads, parking, fields, lawns, pools | OpenStreetMap (ODbL) | `CampusMap`, `GroundBuilder` |
+| Trees (position, height, crown, palm vs broadleaf) | Canopy-height-model peaks from lidar (multi-return pulses) | `Vegetation` |
+| Facades, roofs, ground surfaces | Procedural textures (window grids, mullions, floor bands, clay tile, pavers…) | `ProceduralTextures` |
+| Lamps, benches, trash cans, bike racks | Procedural placement along OSM walkways / near entrances | `Vegetation` |
+
+* **Hero buildings:** the 22 named buildings that score highest on size and closeness to Metzger Lawn get
+  entrances (glass doors, canopy, columns) facing the nearest walkway and rooftop units; the Library gets its
+  glowing roof beacon. All other footprints use the same generator with less detail.
+* **Clipping:** a `CesiumPolygonRasterOverlay` (material key `Clipping`) with the campus boundary (+3 m)
+  hides the Google tiles inside campus and skips tiles entirely inside it. Google tiles are only streamed
+  and displayed; nothing is read back from them, cached to disk or used to build our models.
+* **Heights:** 3DEP heights are NAVD88; Google tiles use WGS84 ellipsoid heights. The georeference origin
+  is placed on the lidar ground at the campus centre (orthometric + GEOID18 undulation).
+
+## CI screenshots and diagnostics
+
+* The status line at the bottom-left always says what is rendering: `Google Photorealistic 3D Tiles:
+  streaming` or `FALLBACK: offline OSM boxes — <cause>` (no key, HTTP 403 key/referrer, 429 quota,
+  network/CORS). **F3** adds FPS, page origin, quality and GPU. The same lines are logged as `[BiolaDiag]`.
+* `?shot=all` runs a fixed camera tour (main entrance, central quad, between hero buildings, drone view).
+  Extra parameters: `quality=low|medium|high`, `night=1`, `time=HH:MM`, `date=YYYY-MM-DD`.
+* After each deploy, the **Screenshots (headless Chrome)** job opens the live site with Playwright, saves
+  the four views and the console log as the `screenshots-<run>` artifact, and publishes them to the
+  `ci-screenshots` branch (`latest/` and `runs/<run>-<sha>/`).
+
 ## 5. Deploy the Web build
 
 Every workflow run uploads the player as the artifact **BiolaCampus3D-WebGL** (a folder with `index.html`,
@@ -190,6 +228,13 @@ the correct `Content-Type` (`application/wasm` for the wasm, `application/javasc
 
 ---
 
+### Windows desktop build
+
+The workflow also builds **BiolaCampus3D-Windows** (artifact): download it from the run page, unzip and start
+`BiolaCampus3D.exe`. Desktop defaults to the **High** preset (SSAO, 4-cascade shadows, SMAA). The key is
+inside this build too, and a website restriction does not apply to desktop apps, so share it only with
+people you trust, or create a second key restricted to the Map Tiles API for it.
+
 ## 6. Restrict your API key once it is hosted
 
 > ⚠️ A Web game must send the Map Tiles key to the browser, so anyone can see it in the built files.
@@ -240,6 +285,8 @@ OSM cache is a small JSON file.
 | E / Q (or Ctrl, C) | Drone up / down |
 | Mouse wheel | Drone cruise speed |
 | M or Tab | Enlarge / shrink the minimap |
+| N | Day / night |
+| F3 | Renderer diagnostics |
 | Esc | Release the mouse, open the pause menu |
 
 ---
@@ -265,17 +312,25 @@ Assets/
     Core/      GameBootstrap (runtime scene builder), SecretsLoader, GameSettings, InputShim
     Geo/       WGS84 → local ENU math, polygon utilities (point-in-polygon, ear clipping)
     Osm/       CampusMap: loads + projects the OSM cache, building lookups, spawn point
-    World/     CampusWorld (CesiumGeoreference + Google tileset), BoundaryWall, OfflineCampus
+    World/     CampusWorld (CesiumGeoreference + Google tileset), SunController, RenderingSetup (URP),
+               BoundaryWall, OfflineCampus
+    World/Campus/  HeroCampus, GroundBuilder, BuildingBuilder, Vegetation, ProceduralTextures,
+                   CampusMaterials, TerrainField (lidar), GoogleClipping
     Player/    FirstPersonController (walk + drone)
     UI/        HUD, minimap, menus, attribution bar, uGUI factory
   BiolaCampus/Editor/   project setup, CI build method, secrets build processor, Scene view preview
   Config/secrets.example.json      (secrets.json is git-ignored)
   Resources/OSM/biola_campus.json  OSM cache read at runtime
+  Resources/OSM/biola_lidar.json   lidar building heights / roof types / trees
+  Resources/Terrain/biola_terrain.json  lidar terrain grid
   WebGLTemplates/Biola/            page template + coi-serviceworker.js
 Data/osm/                          raw Overpass response (written by the fetch script)
 Tools/osm/fetch_osm.py             Overpass → cache
+Tools/lidar/fetch_lidar.py         USGS 3DEP lidar → terrain, building heights, trees
+Tools/capture/capture.mjs          Playwright screenshot tour (CI)
 Tools/git/                         secret scan + pre-commit hook installer
-.github/workflows/                 build-webgl.yml, refresh-osm.yml
+.github/workflows/                 build-webgl.yml (WebGL + Windows + Pages + screenshots),
+                                   refresh-osm.yml, refresh-lidar.yml
 ```
 
 ---
@@ -300,6 +355,7 @@ Tools/git/                         secret scan + pre-commit hook installer
 
 * 3D imagery: **Google Photorealistic 3D Tiles** via Google Maps Platform (© Google and data providers)
 * Map data: **© OpenStreetMap contributors**, ODbL 1.0
+* Terrain, building heights and trees: **U.S. Geological Survey 3D Elevation Program** lidar (public domain)
 * **Cesium for Unity** © Cesium GS, Inc. — Apache License 2.0
 * **coi-serviceworker** © Guido Zuidhof — MIT (`Assets/WebGLTemplates/Biola/coi-serviceworker.js`)
 * Built with **Unity**
