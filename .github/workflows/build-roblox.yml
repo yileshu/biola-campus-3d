@@ -1,0 +1,67 @@
+name: Build Roblox place
+
+# Generates the Roblox version (Tools/roblox/build_roblox.py → Rojo project) from OSM + USGS lidar
+# data and builds BiolaCampus.rbxl with Rojo. No Google content is used.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "roblox/**"
+      - "Tools/roblox/**"
+      - "Assets/Resources/OSM/**"
+      - "Assets/Resources/Terrain/**"
+      - "Data/osm/**"
+      - ".github/workflows/build-roblox.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      ROJO_VERSION: "7.7.1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Secret scan
+        run: bash Tools/git/check-secrets.sh
+      - name: Generate the Rojo project from OSM + lidar
+        run: |
+          pip install numpy pillow
+          python3 Tools/roblox/build_roblox.py --preview
+          cat roblox/build-stats.json
+      - name: Install Rojo
+        run: |
+          curl -sSL -o rojo.zip "https://github.com/rojo-rbx/rojo/releases/download/v${ROJO_VERSION}/rojo-${ROJO_VERSION}-linux-x86_64.zip"
+          unzip -o rojo.zip -d rojo-bin
+          chmod +x rojo-bin/rojo
+          rojo-bin/rojo --version
+      - name: Build BiolaCampus.rbxl (validates classes, properties and enums)
+        run: |
+          mkdir -p out
+          rojo-bin/rojo build roblox/default.project.json -o out/BiolaCampus.rbxl
+          ls -la out
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BiolaCampus-Roblox
+          path: |
+            out/BiolaCampus.rbxl
+            roblox/preview/*.png
+            roblox/build-stats.json
+      - name: Publish to the "roblox-latest" release
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          notes="Roblox place generated from OpenStreetMap (© OpenStreetMap contributors, ODbL) and USGS 3DEP lidar (public domain). Commit ${GITHUB_SHA::7}. Open in Roblox Studio; see roblox/README.md."
+          if gh release view roblox-latest >/dev/null 2>&1; then
+            gh release upload roblox-latest out/BiolaCampus.rbxl roblox/preview/*.png --clobber
+            gh release edit roblox-latest --notes "$notes" --target "$GITHUB_SHA"
+          else
+            gh release create roblox-latest out/BiolaCampus.rbxl roblox/preview/*.png --title "Biola Campus — Roblox place (latest)" --notes "$notes" --prerelease --target "$GITHUB_SHA"
+          fi

@@ -1,0 +1,79 @@
+{
+  "name": "BiolaCampus",
+  "tree": {
+    "$className": "DataModel",
+    "Workspace": {
+      "$className": "Workspace",
+      "Campus": {
+        "$path": "src/Workspace/Campus"
+      }
+    },
+    "Lighting": {
+      "$className": "Lighting",
+      "$properties": {
+        "Technology": "Future",
+        "ClockTime": 15.5,
+        "GeographicLatitude": 33.9,
+        "Brightness": 2.6,
+        "EnvironmentDiffuseScale": 1,
+        "EnvironmentSpecularScale": 1,
+        "GlobalShadows": true,
+        "ShadowSoftness": 0.15,
+        "Ambient": [0.27, 0.27, 0.29],
+        "OutdoorAmbient": [0.5, 0.5, 0.53],
+        "ExposureCompensation": 0.1
+      },
+      "Atmosphere": {
+        "$className": "Atmosphere",
+        "$properties": {
+          "Density": 0.28,
+          "Offset": 0.2,
+          "Color": [0.78, 0.82, 0.88],
+          "Decay": [0.92, 0.78, 0.66],
+          "Glare": 0.25,
+          "Haze": 1.4
+        }
+      },
+      "Sky": {
+        "$className": "Sky",
+        "$properties": {
+          "SunAngularSize": 14,
+          "MoonAngularSize": 9
+        }
+      },
+      "Bloom": {
+        "$className": "BloomEffect",
+        "$properties": { "Intensity": 0.55, "Size": 28, "Threshold": 1.4 }
+      },
+      "SunRays": {
+        "$className": "SunRaysEffect",
+        "$properties": { "Intensity": 0.035, "Spread": 0.75 }
+      },
+      "ColorCorrection": {
+        "$className": "ColorCorrectionEffect",
+        "$properties": { "Brightness": 0.02, "Contrast": 0.09, "Saturation": 0.12, "TintColor": [1, 0.99, 0.96] }
+      }
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$path": "src/ServerScriptService"
+    },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "BiolaTerrain": {
+        "$path": "src/ServerStorage/BiolaTerrain"
+      }
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "$properties": {
+        "CharacterWalkSpeed": 16,
+        "CameraMaxZoomDistance": 400
+      },
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$path": "src/StarterPlayerScripts"
+      }
+    }
+  }
+}
