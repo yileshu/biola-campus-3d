@@ -672,8 +672,7 @@ def rasterize_materials(osm, surr, enu, terrain, campus_ring, buildings2d):
                 stroke(pts, 5.0, "A")
             elif k in ("footway", "path", "pedestrian"):
                 stroke(pts, 2.0, "P")
-        for b in surr["buildings"]:
-            fill_poly(enu.ring(b["pts"]), "C")
+        # (only buildings that are actually modelled get a concrete pad — see buildings2d below)
     # campus areas and paths
     for a in osm["areas"]:
         code = area_code.get(a["kind"])
