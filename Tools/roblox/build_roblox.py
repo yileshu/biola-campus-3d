@@ -231,11 +231,13 @@ class Parts:
     def _cf(pos, right, up):
         right, up = unit(right), unit(up)
         back = np.cross(right, up)
+        # Rojo implicit CFrame: [x, y, z, R00, R01, R02, R10, R11, R12, R20, R21, R22] (rows of the
+        # rotation matrix whose columns are right, up, back).
         rows = [[right[i], up[i], back[i]] for i in range(3)]
-        return {"position": [round(float(x) * S, 3) for x in pos], "orientation": [[round(float(x), 6) for x in r] for r in rows]}
+        return [round(float(x) * S, 3) for x in pos] + [round(float(x), 6) for r in rows for x in r]
 
     def add(self, name, pos, size, right, up, material, color, cls="Part", shape=None, transparency=0.0, reflectance=0.0,
-            collide=True, shadow=True, children=None, tri=None):
+            collide=True, shadow=True, children=None, tri=None, attributes=None):
         props = {
             "Anchored": True,
             "Size": [round(max(0.002, float(s)) * S, 3) for s in size],
@@ -256,6 +258,8 @@ class Parts:
         item = {"name": name, "className": cls, "properties": props}
         if children:
             item["children"] = children
+        if attributes:
+            item["attributes"] = attributes
         # keep a compact geometric description for the preview renderer
         item["_geo"] = (cls, shape, np.array(pos, float), np.array(size, float), unit(np.array(right, float)), unit(np.array(up, float)), color)
         self.items.append(item)
@@ -298,8 +302,9 @@ class Parts:
         children = []
         for it in self.items:
             d = {k: it[k] for k in ("name", "className", "properties")}
-            if "children" in it:
-                d["children"] = it["children"]
+            for k in ("children", "attributes"):
+                if k in it:
+                    d[k] = it[k]
             children.append(d)
         with open(path, "w", encoding="utf-8") as f:
             json.dump({"className": class_name, "children": children}, f, separators=(",", ":"))
@@ -457,12 +462,9 @@ def build_building(P, bld, lidar, terrain, hero, entrance_toward, label):
                children=[{"name": "BeaconLight", "className": "PointLight", "properties": {"Brightness": 3, "Range": 40, "Color": [0.85, 0.92, 1.0], "Shadows": False}}])
         P.vcyl("BeaconCap", R(c2[0], top + 2.2, c2[1]), 0.2, 9.0, "Concrete", st["trim"])
     if label:
+        # The client script turns these anchors into BillboardGui name labels.
         P.box("Label", R(c2[0], wall_top + 4, c2[1]), (1, 1, 1), v(1, 0, 0), "SmoothPlastic", (1, 1, 1), transparency=1, collide=False, shadow=False,
-              children=[{"name": "Name", "className": "BillboardGui", "properties": {
-                  "Size": [[0, 260], [0, 46]], "MaxDistance": 260, "LightInfluence": 0, "AlwaysOnTop": False},
-                  "children": [{"name": "Text", "className": "TextLabel", "properties": {
-                      "Size": [[1, 0], [1, 0]], "BackgroundTransparency": 1, "Text": name, "TextScaled": True,
-                      "TextColor3": [1, 1, 1], "TextStrokeTransparency": 0.35, "Font": "GothamBold"}}]}])
+              attributes={"BuildingName": name})
     return wall_top
 
 

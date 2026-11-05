@@ -38,6 +38,34 @@ task.delay(12, function()
 	hint.Visible = false
 end)
 
+-- ---------------------------------------------------------------- building names
+local function addLabel(anchor)
+	local name = anchor:GetAttribute("BuildingName")
+	if not name or anchor:FindFirstChild("NameLabel") then return end
+	local bb = Instance.new("BillboardGui")
+	bb.Name = "NameLabel"
+	bb.Size = UDim2.fromOffset(260, 46)
+	bb.MaxDistance = 260
+	bb.LightInfluence = 0
+	bb.AlwaysOnTop = false
+	local t = Instance.new("TextLabel")
+	t.Size = UDim2.fromScale(1, 1)
+	t.BackgroundTransparency = 1
+	t.Text = name
+	t.TextScaled = true
+	t.Font = Enum.Font.GothamBold
+	t.TextColor3 = Color3.new(1, 1, 1)
+	t.TextStrokeTransparency = 0.35
+	t.Parent = bb
+	bb.Parent = anchor
+end
+
+task.defer(function()
+	for _, d in ipairs(campus:GetDescendants()) do
+		if d:IsA("BasePart") and d.Name == "Label" then addLabel(d) end
+	end
+end)
+
 -- ---------------------------------------------------------------- day / night
 local DAY_TIME, NIGHT_TIME = 15.5, 20.75
 local night = false
