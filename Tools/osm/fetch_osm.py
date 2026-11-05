@@ -30,6 +30,8 @@ import urllib.request
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 RAW_PATH = os.path.join(ROOT, "Data", "osm", "biola_overpass_raw.json")
 OUT_PATH = os.path.join(ROOT, "Assets", "Resources", "OSM", "biola_campus.json")
+SURROUND_PATH = os.path.join(ROOT, "Data", "osm", "biola_surroundings.json")
+SURROUND_MARGIN_DEG = 0.0013   # ≈ 140 m around the campus boundary (the "street edge")
 
 ENDPOINTS = [
     "https://overpass-api.de/api/interpreter",
@@ -296,18 +298,82 @@ def summary(out):
           f'paths: {len(out["paths"])}, areas: {len(out["areas"])}, pois: {len(out["pois"])}')
 
 
+def surroundings_query(bbox):
+    s, w, n, e = bbox
+    b = f"({s},{w},{n},{e})"
+    return f"""
+[out:json][timeout:120];
+(
+  way["building"]{b};
+  way["highway"]{b};
+  way["landuse"]{b};
+  way["leisure"]{b};
+  way["amenity"="parking"]{b};
+  way["natural"]{b};
+);
+out tags geom qt;
+"""
+
+
+def process_surroundings(raw, source, bbox):
+    out = {"meta": {"source": source, "attribution": ATTRIBUTION, "license": LICENSE, "bbox": bbox,
+                    "fetchedUtc": raw.get("osm3s", {}).get("timestamp_osm_base", "")},
+           "buildings": [], "paths": [], "areas": []}
+    for e in raw.get("elements", []):
+        t = e.get("tags", {})
+        g = e.get("geometry")
+        if not g:
+            continue
+        ident = f'{e["type"]}/{e["id"]}'
+        if "building" in t:
+            if len(g) >= 4:
+                out["buildings"].append({"id": ident, "name": t.get("name", ""), "kind": t.get("building", "yes"),
+                                         "levels": parse_float(t.get("building:levels")), "height": parse_float(t.get("height")),
+                                         "roof": t.get("roof:shape", ""), "pts": geom_to_flat(g)})
+        elif "highway" in t:
+            out["paths"].append({"id": ident, "kind": t["highway"], "name": t.get("name", ""),
+                                 "lanes": parse_float(t.get("lanes")), "pts": geom_to_flat(g)})
+        elif is_closed(g):
+            kind = t.get("leisure") or t.get("landuse") or t.get("natural") or t.get("amenity")
+            out["areas"].append({"id": ident, "kind": kind, "name": t.get("name", ""), "pts": geom_to_flat(g)})
+    return out
+
+
+def fetch_surroundings(campus):
+    lats, lons = [], []
+    for r in campus["boundary"]:
+        lats += r["pts"][0::2]
+        lons += r["pts"][1::2]
+    if not lats:
+        return None
+    m = SURROUND_MARGIN_DEG
+    bbox = [round(min(lats) - m, 6), round(min(lons) - m * 1.2, 6), round(max(lats) + m, 6), round(max(lons) + m * 1.2, 6)]
+    print("Querying Overpass API for the surroundings…")
+    raw, url = fetch_overpass(surroundings_query(bbox))
+    out = process_surroundings(raw, "Overpass API " + url, bbox)
+    write_json(SURROUND_PATH, out, compact=True)
+    print(f"  surroundings: {len(out['buildings'])} buildings, {len(out['paths'])} ways, {len(out['areas'])} areas")
+    return out
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--from-raw", help="process an existing Overpass JSON file instead of fetching")
     ap.add_argument("--placeholder", action="store_true", help="write a placeholder file (no network)")
     ap.add_argument("--if-placeholder", action="store_true", help="only fetch if the current cache is a placeholder")
     ap.add_argument("--reason", default="Overpass API not reachable when the cache was generated")
+    ap.add_argument("--surroundings-only", action="store_true", help="only (re)fetch the streets/houses around campus")
     args = ap.parse_args()
 
     if args.placeholder:
         out = placeholder(args.reason)
         write_json(OUT_PATH, out, compact=False)
         summary(out)
+        return 0
+
+    if args.surroundings_only:
+        with open(OUT_PATH, encoding="utf-8") as f:
+            fetch_surroundings(json.load(f))
         return 0
 
     if args.if_placeholder and not current_is_placeholder():
@@ -327,6 +393,11 @@ def main():
     out = process(raw, source)
     write_json(OUT_PATH, out, compact=True)
     summary(out)
+    if not args.from_raw:
+        try:
+            fetch_surroundings(out)
+        except Exception as e:  # noqa: BLE001
+            print(f"  surroundings fetch failed: {e}", file=sys.stderr)
     return 0
 
 
